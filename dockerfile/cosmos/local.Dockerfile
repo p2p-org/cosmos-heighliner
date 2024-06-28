@@ -197,9 +197,10 @@ RUN rm ln rm mv mkdir dirname
 # Install trusted CA certificates
 COPY --from=alpine-3 /etc/ssl/cert.pem /etc/ssl/cert.pem
 
-# Install heighliner user
+# Install p2p user
 COPY --from=infra-toolkit /etc/passwd /etc/passwd
 COPY --from=infra-toolkit --chown=1111:1111 /home/p2p /home/p2p
+COPY --from=infra-toolkit --chown=1111:1111 /etc/apk /etc/apk
 COPY --from=infra-toolkit --chown=1111:1111 /tmp /tmp
 
 # Install chain binaries
