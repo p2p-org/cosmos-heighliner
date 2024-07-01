@@ -210,4 +210,4 @@ COPY --from=build-env /root/bin /bin
 COPY --from=build-env /root/lib /lib
 
 WORKDIR /home/p2p
-USER p2p
+# USER p2p
