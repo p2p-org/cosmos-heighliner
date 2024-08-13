@@ -535,6 +535,9 @@
   github-repo: dymension
   dockerfile: cosmos
   build-target: make install
+  build-env:
+    - LEDGER_ENABLED=false
+    - BUILD_TAGS=muslc
   binaries:
     - /go/bin/dymd
 
