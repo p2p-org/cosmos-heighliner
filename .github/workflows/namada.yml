@@ -10,6 +10,8 @@ env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
   INFRA_TOOLKIT: v0.1.6
+  GIT_LFS_SKIP_SMUDGE: 1
+  RUST_BACKTRACE: full
 
 jobs:
   build-and-push-namada:

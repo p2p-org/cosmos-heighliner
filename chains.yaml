@@ -862,7 +862,7 @@
   binaries:
     - /go/bin/migalood
 
-# namada
+# Namada
 - name: namada
   github-organization: anoma
   github-repo: namada
@@ -870,40 +870,21 @@
   build-env:
     - COMETBFT_VERSION=v0.37.11
     - NAMADA_LOG_COLOR=false
-    - PKG_CONFIG_ALLOW_SYSTEM_CFLAGS=1
-    - PKG_CONFIG_ALLOW_SYSTEM_LIBS=1
-    - NAMADA_BINARY=/build/target/release/namada
-    - NAMADAN_BINARY=/build/target/release/namadan
-    - NAMADAW_BINARY=/build/target/release/namadaw
-    - NAMADAC_BINARY=/build/target/release/namadac
-    - COMETBFT_BINARY=/build/cometbft/build/cometbft
-  build-target: |
-    apt update && apt install -y \
+  pre-build: |
+    apt update
+    apt install -y \
       build-essential \
-      clang-tools \
+      clang-tools-14 \
       git \
-      libcurl4-openssl-dev \
       libssl-dev \
       pkg-config \
       protobuf-compiler \
       libudev-dev \
-      zlib1g-dev \
       wget
-
-    # Set PKG_CONFIG_PATH
-    export PKG_CONFIG_PATH=/usr/lib/x86_64-linux-gnu/pkgconfig:/usr/share/pkgconfig:$PKG_CONFIG_PATH
-
-    # Rust Toolchain
-    TOOLCHAIN=$(cat rust-toolchain.toml | grep channel | awk '{print $3}' | tr -d '"')
-    rustup install ${TOOLCHAIN}
-    rustup default ${TOOLCHAIN}
-    rustup component add rust-src --toolchain ${TOOLCHAIN}
-    rustup target add wasm32-unknown-unknown
-    cargo install cargo-chef
-
+    apt clean
+  build-target: |
     # Build Namada
     cargo chef prepare --recipe-path recipe.json
-    cargo chef cook --release --recipe-path recipe.json
     make build-release
 
     # Install Go
@@ -914,15 +895,17 @@
     # Build CometBFT
     git clone -b ${COMETBFT_VERSION} --single-branch https://github.com/cometbft/cometbft.git
     cd cometbft && make build
+  final-image: |
+    set -eux
+    apt-get update
+    apt-get install vim libcurl4-openssl-dev libudev-dev -y
+    apt-get clean
   binaries:
-    - /build/cometbft/build/cometbft
-    - /build/target/release/namada
-    - /build/target/release/namadan
-    - /build/target/release/namadaw
-    - /build/target/release/namadac
-  build-dir: .
-  platforms:
-    - linux/amd64
+    - /build/namada/cometbft/build/cometbft
+    - /build/namada/target/${ARCH}-unknown-linux-gnu/release/namada
+    - /build/namada/target/${ARCH}-unknown-linux-gnu/release/namadan
+    - /build/namada/target/${ARCH}-unknown-linux-gnu/release/namadaw
+    - /build/namada/target/${ARCH}-unknown-linux-gnu/release/namadac
 
 # Nomic
 - name: nomic

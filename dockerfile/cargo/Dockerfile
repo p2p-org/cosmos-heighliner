@@ -1,6 +1,4 @@
-FROM --platform=$BUILDPLATFORM rust:1-bullseye AS build-env
-
-RUN rustup component add rustfmt
+FROM --platform=$BUILDPLATFORM lukemathwalker/cargo-chef:latest-rust-1.81.0-bookworm AS build-env
 
 ARG TARGETARCH
 ARG BUILDARCH
@@ -19,7 +17,7 @@ RUN if [ "${TARGETARCH}" = "arm64" ]; then\
   else\
   apt update;\
   fi;\
-  apt install -y libssl1.1:arm64 libssl-dev:arm64 openssl:arm64 libclang-dev clang cmake libstdc++6:arm64;\
+  apt install -y libssl-dev:arm64 openssl:arm64 libclang-dev clang cmake libstdc++6:arm64;\
   elif [ "${TARGETARCH}" = "amd64" ]; then\
   rustup target add x86_64-unknown-linux-gnu;\
   wget https://github.com/protocolbuffers/protobuf/releases/download/v21.8/protoc-21.8-linux-x86_64.zip;\
@@ -33,7 +31,7 @@ RUN if [ "${TARGETARCH}" = "arm64" ]; then\
   else\
   apt update;\
   fi;\
-  apt install -y libssl1.1:amd64 libssl-dev:amd64 openssl:amd64 libclang-dev clang cmake libstdc++6:amd64;\
+  apt install -y libssl-dev:amd64 openssl:amd64 libclang-dev clang cmake libstdc++6:amd64;\
   fi
 
 ARG GITHUB_ORGANIZATION
@@ -55,13 +53,6 @@ ARG BUILD_DIR
 RUN if [ ! -z "$BUILD_TARGET" ]; then\
   if [ ! -z "$BUILD_DIR" ]; then cd "${BUILD_DIR}"; fi;\
   if [ ! -f "Cargo.toml" ]; then exit 0; fi;\
-  if [ "$TARGETARCH" = "arm64" ] && [ "$BUILDARCH" != "arm64" ]; then\
-  cargo fetch --target aarch64-unknown-linux-gnu;\
-  elif [ "$TARGETARCH" = "amd64" ] && [ "$BUILDARCH" != "amd64" ]; then\
-  cargo fetch --target x86_64-unknown-linux-gnu;\
-  else\
-  cargo fetch;\
-  fi;\
   fi
 
 ARG BUILD_ENV
@@ -220,95 +211,29 @@ RUN bash -c 'set -eux;\
   done'
 
 # Build final image from scratch
-FROM scratch
+FROM debian:bookworm-slim
 
-LABEL org.opencontainers.image.source="https://github.com/p2p/cosmos-heighliner"
-
-WORKDIR /bin
-
-# Install ln (for making hard links), rm (for cleanup), mv, mkdir, and dirname from full busybox image (will be deleted, only needed for image assembly)
-COPY --from=busybox-full /bin/ln /bin/rm /bin/mv /bin/mkdir /bin/dirname ./
-
-# Install minimal busybox image as shell binary (will create hardlinks for the rest of the binaries to this data)
-COPY --from=infra-toolkit /busybox/busybox /bin/sh
-
-# Install jq
-COPY --from=infra-toolkit /usr/local/bin/jq /bin/
-
-# Add hard links for read-only utils
-# Will then only have one copy of the busybox minimal binary file with all utils pointing to the same underlying inode
-RUN for b in \
-  cat \
-  date \
-  df \
-  du \
-  env \
-  grep \
-  head \
-  less \
-  ls \
-  md5sum \
-  pwd \
-  sha1sum \
-  sha256sum \
-  sha3sum \
-  sha512sum \
-  sleep \
-  stty \
-  tail \
-  tar \
-  tee \
-  tr \
-  watch \
-  which \
-  ; do ln sh $b; done
-
-# Install chain binaries
-COPY --from=build-env /root/bin /bin
-
-# Install libraries that don't need absolute path
-COPY --from=build-env /root/lib /lib
-
-# Copy over absolute path libraries
-COPY --from=target-arch-libs /root/lib_abs /root/lib_abs
-COPY --from=target-arch-libs /root/lib_abs.list /root/lib_abs.list
-
-# Move absolute path libraries to their absolute locations.
-RUN sh -c 'i=0; while read FILE; do\
-      echo "$i: $FILE";\
-      DIR="$(dirname "$FILE")";\
-      mkdir -p "$DIR";\
-      mv /root/lib_abs/$i $FILE;\
-      i=$((i+1));\
-    done < /root/lib_abs.list'
-
-# Copy over absolute path directories
-COPY --from=build-env /root/dir_abs /root/dir_abs
-COPY --from=build-env /root/dir_abs.list /root/dir_abs.list
-
-# Move absolute path directories to their absolute locations.
-RUN sh -c 'i=0; while read DIR; do\
-      echo "$i: $DIR";\
-      PLACEDIR="$(dirname "$DIR")";\
-      mkdir -p "$PLACEDIR";\
-      mv /root/dir_abs/$i $DIR;\
-      i=$((i+1));\
-    done < /root/dir_abs.list'
-
-RUN mkdir -p /usr/bin && ln -s /bin/env /usr/bin/env
+LABEL org.opencontainers.image.source="https://github.com/p2p-org/cosmos-heighliner"
 
 ARG FINAL_IMAGE
 RUN if [ ! -z "$FINAL_IMAGE" ]; then sh -c "$FINAL_IMAGE"; fi
 
-# Remove write utils used to construct image and tmp dir/file for lib copy.
-RUN rm -rf ln rm mv mkdir dirname /root/lib_abs /root/lib_abs.list
+WORKDIR /bin
 
-# Install trusted CA certificates
-COPY --from=alpine-3 /etc/ssl/cert.pem /etc/ssl/cert.pem
+# Install jq
+COPY --from=infra-toolkit /usr/local/bin/jq /bin/
 
-# Install heighliner user
-COPY --from=infra-toolkit /etc/passwd /etc/passwd
-COPY --from=infra-toolkit --chown=1111:1111 /home/p2p /home/p2p
+# Install chain binaries
+COPY --from=build-env /root/bin /bin
+
+# Install libraries
+COPY --from=build-env /root/lib /lib
+
+# # Install p2p user
+# RUN addgroup --gid 1111 -S p2p && adduser --uid 1111 -S p2p -G p2p
+# RUN chown 1111:1111 -R /home/p2p
+# RUN chown 1111:1111 -R /etc/apk
+# RUN chown 1111:1111 -R /tmp
 
 WORKDIR /home/p2p
 # USER p2p
