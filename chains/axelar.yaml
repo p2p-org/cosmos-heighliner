@@ -2,9 +2,19 @@
 - name: axelar
   github-organization: axelarnetwork
   github-repo: axelar-core
-  dockerfile: cosmos
+  dockerfile: none
+  pre-build: |
+    set -eux
+    wget https://axelar-releases.s3.us-east-2.amazonaws.com/axelard/${VERSION}/axelard-linux-amd64-${VERSION}.zip
+    apt update && apt -y install unzip
+    unzip axelard-linux-amd64-${VERSION}.zip
+    mv axelard-linux-amd64-${VERSION} /go/bin/axelard
+    chmod +x bin/axelard
+    wget https://github.com/CosmWasm/wasmvm/releases/download/v1.3.1/libwasmvm.x86_64.so
   binaries:
     - bin/axelard
+  libraries:
+    - libwasmvm.x86_64.so
   build-target: |
     set -eux
     apk add --update nodejs npm jq py3-pip
