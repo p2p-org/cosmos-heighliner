@@ -32,7 +32,7 @@ ARG LIBRARIES
 ENV LIBRARIES_ENV ${LIBRARIES}
 RUN bash -c 'LIBRARIES_ARR=($LIBRARIES_ENV); for LIBRARY in "${LIBRARIES_ARR[@]}"; do cp $LIBRARY /root/lib/; done'
 
-FROM debian:bullseye
+FROM debian:bookworm
 
 LABEL org.opencontainers.image.source="https://github.com/p2p-org/cosmos-heighliner"
 
