@@ -1,5 +1,5 @@
 # Celestia App
-- name: celestia
+- name: celestia-app
   github-organization: celestiaorg
   github-repo: celestia-app
   dockerfile: cosmos
