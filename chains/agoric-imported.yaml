@@ -1,0 +1,14 @@
+# Agoric-sdk
+- name: agoric-imported
+  dockerfile: imported
+  base-image: ghcr.io/agoric/agoric-sdk
+  build-env:
+    - LEDGER_ENABLED=false
+  binaries:
+    - /usr/src/agoric-sdk/golang/cosmos/build/agd
+    - /usr/src/agoric-sdk/packages/cosmic-swingset/bin/ag-chain-cosmos
+    - /usr/local/bin/node
+  directories:
+    - /usr/src/agoric-sdk/
+    - /usr/local/lib/
+    - /usr/local/bin/
