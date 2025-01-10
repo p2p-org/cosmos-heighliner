@@ -53,7 +53,7 @@ jobs:
       - name: Extract SDK version    
         run: |
           cd agoric-sdk
-          echo "SDK_VERSION=$(git tag --points-at HEAD | grep sdk | awk -F@ {'print $3'})" >> $GITHUB_ENV
+          echo "SDK_VERSION=56" >> $GITHUB_ENV
           cd ..
 
       - name: Manually pull the base Docker image
