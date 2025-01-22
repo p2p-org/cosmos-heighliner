@@ -1,0 +1,8 @@
+# 0glabs
+- name: 0glabs
+  github-organization: 0glabs
+  github-repo: 0g-chain
+  dockerfile: cosmos
+  build-target: make install
+  binaries:
+    - /go/bin/0gchaind
