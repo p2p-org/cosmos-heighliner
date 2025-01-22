@@ -1,0 +1,41 @@
+name: Sync Fork
+
+on:
+  schedule:
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+
+env:
+  REPO: https://github.com/strangelove-ventures/heighliner.git
+  BRANCH: azhigaev/keep-repo-up-to-date
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Fork
+        uses: actions/checkout@v3
+        with:
+          persist-credentials: false
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Add Upstream
+        run: git remote add upstream ${{ env.REPO }}
+
+      - name: Fetch Upstream
+        run: git fetch upstream
+
+      - name: Rebase changes
+        run: |
+          git branch --set-upstream-to=upstream/main ${{ env.BRANCH }
+          git checkout ${{ env.BRANCH }
+          git pull --rebase
+        env:
+          GIT_AUTHOR_NAME: GitHub Action
+          GIT_AUTHOR_EMAIL: actions@github.com
+
+      - name: Push Changes
+        run: git push origin ${{ env.BRANCH }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
