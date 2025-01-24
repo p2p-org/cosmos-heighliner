@@ -10,7 +10,6 @@ env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
   INFRA_TOOLKIT: v0.1.6
-  REPO: wormhole-wormchain-dos-fix
 
 jobs:
   build-and-push-wormchain:
@@ -48,17 +47,9 @@ jobs:
           echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin
           docker pull ghcr.io/p2p-org/cosmos-heighliner:infra-toolkit-${{ env.INFRA_TOOLKIT }}
 
-      - name: Set environment variables
-        run: |
-          echo "GH_USER=${{ secrets.GH_USER }}" >> $GITHUB_ENV
-          echo "GH_PAT=${{ secrets.GH_PAT }}" >> $GITHUB_ENV
-
       - name: Build and push wormchain Docker image
         run: |
-          ./heighliner build -c wormchain --repo ${{ env.REPO }} --clone-key ${{ secrets.CLONE_KEY }} --git-ref v2.24.2-wormchaind-sec-patch
-        env:
-          GH_USER: ${{ secrets.GH_USER }}
-          GH_PAT: ${{ secrets.GH_PAT }}
+          ./heighliner build -c wormchain --git-ref ${{ env.VERSION }}
 
       - name: Tag and push Docker image
         run: |
