@@ -3,7 +3,7 @@ name: Build and Push agoric Docker Image
 on:
   push:
     tags:
-      - "agoric-upgrade-[0-9]+*"
+      - "agoric-upgrade-*"
   workflow_dispatch:
 
 env:
@@ -50,10 +50,10 @@ jobs:
           fetch-tags: true
           path: agoric-sdk
 
-      - name: Extract SDK version    
+      - name: Extract SDK version
         run: |
           cd agoric-sdk
-          echo "SDK_VERSION=56" >> $GITHUB_ENV
+          echo "SDK_VERSION=57" >> $GITHUB_ENV
           cd ..
 
       - name: Manually pull the base Docker image
