@@ -17,7 +17,7 @@ const (
 	// ADD NEW GO VERSION [1] - latest patch release for each major/minor
 
 	// When updating alpine image, ensure all golang build image combinations below exist
-	LatestAlpineImageVersion = "3.19"
+	LatestAlpineImageVersion = "3.20"
 )
 
 var (
