@@ -25,7 +25,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v3
         with:
-          go-version: '1.21'
+          go-version: '1.23'
 
       - name: Log in to the Container registry
         uses: docker/login-action@v1
@@ -49,7 +49,7 @@ jobs:
 
       - name: Build and push stride Docker image
         run: |
-          ./heighliner build -c stride  --go-version 1.21 --git-ref ${{ env.VERSION }}
+          ./heighliner build -c stride  --go-version 1.23 --git-ref ${{ env.VERSION }}
 
       - name: Tag and push Docker image
         run: |
