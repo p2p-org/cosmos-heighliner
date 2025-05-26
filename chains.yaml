@@ -926,15 +926,9 @@
   dockerfile: cosmos
   build-target: make install
   binaries:
-<<<<<<< HEAD
-    - /go/bin/neutrond
-  build-env:
-    - BUILD_TAGS=muslc
-=======
     - /root/go/bin/neutrond
   libraries:
     - /root/go/pkg/mod/github.com/!cosm!wasm/wasmvm/*/internal/api/libwasmvm.${ARCH}.so
->>>>>>> 805d114 (update neutron libs)
 
 # Nibiru
 - name: nibiru
