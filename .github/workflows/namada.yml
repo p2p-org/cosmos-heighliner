@@ -15,7 +15,7 @@ env:
 
 jobs:
   build-and-push-namada:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     permissions:
       contents: read
       packages: write
@@ -36,9 +36,12 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build Heighliner binary
+      - name: Build Namada binaries
         run: |
-          go build -o heighliner
+          go build -o namada ./cmd/namada
+          go build -o namadaw ./cmd/namadaw
+          go build -o namadan ./cmd/namadan
+          go build -o namadac ./cmd/namadac
 
       - name: Extract version from tag
         id: extract_version
