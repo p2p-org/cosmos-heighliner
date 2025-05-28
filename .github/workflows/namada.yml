@@ -36,13 +36,6 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build Namada binaries
-        run: |
-          go build -o namada ./cmd/namada
-          go build -o namadaw ./cmd/namadaw
-          go build -o namadan ./cmd/namadan
-          go build -o namadac ./cmd/namadac
-
       - name: Extract version from tag
         id: extract_version
         run: echo "VERSION=${GITHUB_REF#refs/tags/namada-}" >> $GITHUB_ENV
@@ -54,7 +47,7 @@ jobs:
 
       - name: Build and push Namada Docker image
         run: |
-          ./heighliner build -c namada --dockerfile namada/Dockerfile --git-ref ${{ env.VERSION }}
+          ./heighliner build -c namada --dockerfile namada/native.Dockerfile --git-ref ${{ env.VERSION }}
 
       - name: Tag and push Docker image
         run: |
