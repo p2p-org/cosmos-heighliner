@@ -47,7 +47,7 @@ jobs:
 
       - name: Build and push Namada Docker image
         run: |
-          ./heighliner build -c namada --dockerfile namada/native.Dockerfile --git-ref ${{ env.VERSION }}
+          ./heighliner build -c namada --git-ref ${{ env.VERSION }}
 
       - name: Tag and push Docker image
         run: |
