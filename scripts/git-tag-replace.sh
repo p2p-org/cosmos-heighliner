@@ -15,5 +15,5 @@ git push origin :refs/tags/$GIT_TAG
 git tag --delete $GIT_TAG
 
 # Create a new tag and push it to the remote repository
-git tag $GIT_TAG
+git tag $GIT_TAG -m "Tagging version $GIT_TAG"
 git push origin --tags
