@@ -851,7 +851,7 @@
 - name: namada
   github-organization: anoma
   github-repo: namada
-  dockerfile: cargo
+  dockerfile: namada
   build-env:
     - COMETBFT_VERSION=v0.37.15
     - NAMADA_LOG_COLOR=false
