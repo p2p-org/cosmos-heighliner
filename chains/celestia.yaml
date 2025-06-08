@@ -6,8 +6,12 @@
   build-target: |
     VERSION := $(shell echo $(shell git describe --tags 2>/dev/null || git log -1 --format='%h') | sed 's/^v//')
     COMMIT=$(git log -1 --format='%H')
-    LDFLAGS="$LDFLAGS -X github.com/cosmos/cosmos-sdk/version.Name=celestia-app -X github.com/cosmos/cosmos-sdk/version.AppName=celestia-appd -X github.com/cosmos/cosmos-sdk/version.Version=$VERSION -X github.com/cosmos/cosmos-sdk/version.Commit=$COMMIT"
-    go install -ldflags="$LDFLAGS" ./cmd/celestia-appd
+    LDFLAGS="$LDFLAGS -X github.com/cosmos/cosmos-sdk/version.Name=celestia-app -X github.com/cosmos/cosmos-sdk/version.AppName=celestia-appd -X github.com/cosmos/cosmos-sdk/version.Version=$VERSION -X github.com/cosmos/cosmos-sdk/version.Commit=$COMMIT -X github.com/celestiaorg/celestia-app/v4/cmd/celestia-appd/cmd.v2UpgradeHeight=0"
+    echo "--> Downloading celestia-app v3.10.1-mocha binary"
+    mkdir -p internal/embedding
+    bash scripts/download_v3_binary.sh "celestia-app_Linux_x86_64.tar.gz" "celestia-app_linux_v3_amd64.tar.gz" "v3.10.1-mocha"
+    mkdir -p build/
+    echo "--> Building build/celestia-appd with multiplexer enabled"
+    go install -tags "ledger multiplexer" -ldflags="$LDFLAGS" ./cmd/celestia-appd
   binaries:
     - /go/bin/celestia-appd
-    
