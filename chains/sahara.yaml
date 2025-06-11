@@ -1,0 +1,9 @@
+- name: sahara
+  dockerfile: none
+  pre-build: |
+    set -eux
+    wget https://github.com/p2p-org/devops-tendermint-public/releases/download/genesis-collection/saharad-${VERSION}
+    mv saharad-${VERSION} saharad
+    chmod 0755 saharad
+  binaries:
+    - saharad
