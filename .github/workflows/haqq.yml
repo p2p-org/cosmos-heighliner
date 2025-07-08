@@ -49,7 +49,7 @@ jobs:
 
       - name: Build and push docker image
         run: |
-          ./heighliner build -c haqq --git-ref ${{ env.VERSION }}
+          ./heighliner build -c haqq --git-ref ${{ env.VERSION }} --alpine-version 3.21
 
       - name: Tag and push Docker image
         run: |
