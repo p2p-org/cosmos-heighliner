@@ -184,6 +184,9 @@ COPY --from=build-env /root/lib /lib
 # Install glibc library
 RUN apk add --update --no-cache libc6-compat
 
+# Upgrade apk
+RUN apk upgrade --no-cache
+
 # # Install p2p user
 # RUN addgroup --gid 1111 -S p2p && adduser --uid 1111 -S p2p -G p2p
 # RUN chown 1111:1111 -R /home/p2p
