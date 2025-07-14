@@ -8,6 +8,9 @@ var Cosmos []byte
 //go:embed avalanche/Dockerfile
 var Avalanche []byte
 
+//go:embed namada/Dockerfile
+var Namada []byte
+
 //go:embed avalanche/native.Dockerfile
 var AvalancheNative []byte
 
@@ -31,3 +34,6 @@ var Cargo []byte
 
 //go:embed cargo/native.Dockerfile
 var CargoNative []byte
+
+//go:embed namada/native.Dockerfile
+var NamadaNative []byte

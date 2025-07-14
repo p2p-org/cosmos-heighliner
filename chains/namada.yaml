@@ -1,0 +1,44 @@
+# Namada
+- name: namada
+  github-organization: anoma
+  github-repo: namada
+  dockerfile: namada
+  build-env:
+    - COMETBFT_VERSION=v0.37.15
+    - NAMADA_LOG_COLOR=false
+  pre-build: |
+    apt update
+    apt install -y \
+      build-essential \
+      clang-tools-14 \
+      git \
+      libssl-dev \
+      pkg-config \
+      protobuf-compiler \
+      libudev-dev \
+      wget
+    apt clean
+  build-target: |
+    # Build Namada
+    cargo chef prepare --recipe-path recipe.json
+    make build-release
+
+    # Install Go
+    wget https://go.dev/dl/go1.21.0.linux-amd64.tar.gz
+    tar -C /usr/local -xzf go1.21.0.linux-amd64.tar.gz
+    export PATH=$PATH:/usr/local/go/bin
+
+    # Build CometBFT
+    git clone -b ${COMETBFT_VERSION} --single-branch https://github.com/cometbft/cometbft.git
+    cd cometbft && make build
+  final-image: |
+    set -eux
+    apt-get update
+    apt-get install vim libcurl4-openssl-dev libudev-dev -y
+    apt-get clean
+  binaries:
+    - /build/namada/cometbft/build/cometbft
+    - /build/namada/target/${ARCH}-unknown-linux-gnu/release/namada
+    - /build/namada/target/${ARCH}-unknown-linux-gnu/release/namadan
+    - /build/namada/target/${ARCH}-unknown-linux-gnu/release/namadaw
+    - /build/namada/target/${ARCH}-unknown-linux-gnu/release/namadac

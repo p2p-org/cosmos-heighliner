@@ -146,6 +146,11 @@ func rawDockerfile(
 			return dockerfileEmbeddedOrLocal("avalanche/Dockerfile", dockerfile.Avalanche)
 		}
 		return dockerfileEmbeddedOrLocal("avalanche/native.Dockerfile", dockerfile.AvalancheNative)
+	case DockerfileTypeNamada:
+		if useBuildKit {
+			return dockerfileEmbeddedOrLocal("namada/Dockerfile", dockerfile.Namada)
+		}
+		return dockerfileEmbeddedOrLocal("namada/native.Dockerfile", dockerfile.NamadaNative)
 	default:
 		return dockerfileEmbeddedOrLocal("none/Dockerfile", dockerfile.None)
 	}
