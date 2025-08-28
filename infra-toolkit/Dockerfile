@@ -59,6 +59,8 @@ RUN autoreconf -fi;\
 
 FROM boxboat/config-merge:0.2.1 as config-merge
 
+FROM alpine/kubectl:latest as kubectl
+
 FROM alpine:3
 
 RUN apk add --no-cache \
@@ -93,3 +95,6 @@ RUN if [ "$(uname -m)" = "aarch64" ]; then \
     wget -O /usr/local/bin/dasel https://github.com/TomWright/dasel/releases/download/v1.26.0/dasel_linux_$ARCH && \
       sha256sum -c <(echo "$DASELSUM") && \
       chmod +x /usr/local/bin/dasel
+
+# Copy kubectl from alpine/kubectl image
+COPY --from=kubectl /usr/local/bin/kubectl /usr/local/bin/kubectl
