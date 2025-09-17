@@ -1,0 +1,8 @@
+# Allora
+- name: allora
+  github-organization: allora-network
+  github-repo: allora-chain
+  dockerfile: cosmos
+  build-target: make install
+  binaries:
+    - /go/bin/allorad
