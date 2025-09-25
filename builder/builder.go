@@ -146,6 +146,11 @@ func rawDockerfile(
 			return dockerfileEmbeddedOrLocal("avalanche/Dockerfile", dockerfile.Avalanche)
 		}
 		return dockerfileEmbeddedOrLocal("avalanche/native.Dockerfile", dockerfile.AvalancheNative)
+	case DockerfileTypeGoBuild:
+		if useBuildKit {
+			return dockerfileEmbeddedOrLocal("go-build/Dockerfile", dockerfile.GoBuild)
+		}
+		return dockerfileEmbeddedOrLocal("go-build/native.Dockerfile", dockerfile.GoBuildNative)
 	default:
 		return dockerfileEmbeddedOrLocal("none/Dockerfile", dockerfile.None)
 	}
@@ -159,6 +164,7 @@ func getModFile(
 	ref string,
 	buildDir string,
 	local bool,
+	dockerfileType DockerfileType,
 ) (*modfile.File, error) {
 	var goModBz []byte
 	var err error
@@ -226,10 +232,44 @@ func getModFile(
 
 	goMod, err := modfile.Parse("go.mod", goModBz, nil)
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse go.mod file: %w", err)
+		// Only apply the fallback parsing for go-build dockerfile type
+		// to avoid affecting existing builds
+		if dockerfileType == DockerfileTypeGoBuild {
+			// If parsing fails (e.g., due to unknown block types like "tool"),
+			// try to extract just the Go version manually
+			goVersion := extractGoVersionFromModFile(goModBz)
+			if goVersion == "" {
+				return nil, fmt.Errorf("failed to parse go.mod file: %w", err)
+			}
+
+			// Create a minimal modfile with just the Go version
+			goMod = &modfile.File{
+				Go: &modfile.Go{
+					Version: goVersion,
+				},
+			}
+		} else {
+			return nil, fmt.Errorf("failed to parse go.mod file: %w", err)
+		}
 	}
 
 	return goMod, nil
+}
+
+// extractGoVersionFromModFile manually extracts the Go version from go.mod content
+// when the full modfile.Parse fails due to unknown block types
+func extractGoVersionFromModFile(goModBz []byte) string {
+	lines := strings.Split(string(goModBz), "\n")
+	for _, line := range lines {
+		line = strings.TrimSpace(line)
+		if strings.HasPrefix(line, "go ") {
+			parts := strings.Fields(line)
+			if len(parts) >= 2 {
+				return parts[1]
+			}
+		}
+	}
+	return ""
 }
 
 // getWasmvmVersion will get the wasmvm version from the mod file
@@ -374,7 +414,7 @@ func (h *HeighlinerBuilder) buildChainNodeDockerImage(
 
 	modFile, err := getModFile(
 		repoHost, chainConfig.Build.GithubOrganization, chainConfig.Build.GithubRepo,
-		chainConfig.Build.CloneKey, chainConfig.Ref, chainConfig.Build.BuildDir, h.local,
+		chainConfig.Build.CloneKey, chainConfig.Ref, chainConfig.Build.BuildDir, h.local, dockerfile,
 	)
 
 	goVersion := buildCfg.GoVersion
@@ -391,6 +431,20 @@ func (h *HeighlinerBuilder) buildChainNodeDockerImage(
 		}
 
 		wasmvmVersion = getWasmvmVersion(modFile)
+
+		if h.race {
+			race = "true"
+			buildEnv += " GOFLAGS=-race"
+			for i, imageTag := range imageTags {
+				imageTags[i] = imageTag + "-race"
+			}
+		}
+
+		fmt.Printf("Go version from go.mod: %s, will build with version: %s image: %s\n", modFile.Go.Version, gv.Version, gv.Image)
+	} else if dockerfile == DockerfileTypeGoBuild {
+		if err != nil {
+			return fmt.Errorf("error getting mod file: %w", err)
+		}
 
 		if h.race {
 			race = "true"

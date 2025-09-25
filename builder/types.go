@@ -7,6 +7,7 @@ const (
 	DockerfileTypeAvalanche DockerfileType = "avalanche"
 	DockerfileTypeCargo     DockerfileType = "cargo"
 	DockerfileTypeImported  DockerfileType = "imported"
+	DockerfileTypeGoBuild   DockerfileType = "go-build"
 
 	DockerfileTypeGo   DockerfileType = "go"   // DEPRECATED, use "cosmos" instead
 	DockerfileTypeRust DockerfileType = "rust" // DEPRECATED, use "cargo" instead
