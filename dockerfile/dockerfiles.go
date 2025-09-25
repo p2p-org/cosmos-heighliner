@@ -31,3 +31,9 @@ var Cargo []byte
 
 //go:embed cargo/native.Dockerfile
 var CargoNative []byte
+
+//go:embed go-build/Dockerfile
+var GoBuild []byte
+
+//go:embed go-build/native.Dockerfile
+var GoBuildNative []byte
