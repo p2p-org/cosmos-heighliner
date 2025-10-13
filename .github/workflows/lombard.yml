@@ -48,7 +48,7 @@ jobs:
             echo "VERSION=${GITHUB_REF#refs/tags/lombard-}" >> $GITHUB_ENV
             echo "IS_RELEASE=true" >> $GITHUB_ENV
           else
-            echo "VERSION=v1.0.0" >> $GITHUB_ENV
+            echo "VERSION=v2.1.0" >> $GITHUB_ENV
             echo "IS_RELEASE=false" >> $GITHUB_ENV
           fi
 
@@ -56,6 +56,17 @@ jobs:
         run: |
           echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin
           docker pull ghcr.io/p2p-org/cosmos-heighliner:infra-toolkit-${{ env.INFRA_TOOLKIT }}
+
+      - name: Debug clone key (check if secret exists)
+        run: |
+          if [ -z "${{ secrets.LOMBARD_CLONE_KEY }}" ]; then
+            echo "❌ LOMBARD_CLONE_KEY secret is not set!"
+            exit 1
+          else
+            echo "✅ LOMBARD_CLONE_KEY secret is set (length: ${#LOMBARD_CLONE_KEY})"
+          fi
+        env:
+          LOMBARD_CLONE_KEY: ${{ secrets.LOMBARD_CLONE_KEY }}
 
       - name: Build lombard Docker image
         run: |

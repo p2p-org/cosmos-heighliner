@@ -5,4 +5,4 @@
   dockerfile: cosmos
   build-target: make install
   binaries:
-    - /root/go/bin/lombardd
+    - /root/go/bin/ledgerd
