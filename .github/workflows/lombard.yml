@@ -4,6 +4,9 @@ on:
   push:
     tags:
       - "lombard-v[0-9]+.[0-9]+.[0-9]+*"
+    branches:
+      - "Amine/Add/lombard-support"
+      - "**/lombard**"
   workflow_dispatch:
 
 env:
@@ -38,20 +41,35 @@ jobs:
         run: |
           go build -o heighliner
 
-      - name: Extract version from tag
+      - name: Extract version from tag or use branch name
         id: extract_version
-        run: echo "VERSION=${GITHUB_REF#refs/tags/lombard-}" >> $GITHUB_ENV
+        run: |
+          if [[ "${{ github.ref_type }}" == "tag" ]]; then
+            echo "VERSION=${GITHUB_REF#refs/tags/lombard-}" >> $GITHUB_ENV
+            echo "IS_RELEASE=true" >> $GITHUB_ENV
+          else
+            echo "VERSION=v1.0.0" >> $GITHUB_ENV
+            echo "IS_RELEASE=false" >> $GITHUB_ENV
+          fi
 
       - name: Manually pull the base Docker image
         run: |
           echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin
           docker pull ghcr.io/p2p-org/cosmos-heighliner:infra-toolkit-${{ env.INFRA_TOOLKIT }}
 
-      - name: Build and push lombard Docker image
+      - name: Build lombard Docker image
         run: |
-          ./heighliner build -c lombard --git-ref ${{ env.VERSION }} --clone-key "${{ secrets.LOMBARD_CLONE_KEY }}"
+          ./heighliner build -c lombard --git-ref ${{ env.VERSION }} --clone-key "${{ secrets.LOMBARD_CLONE_KEY }}" -s
 
-      - name: Tag and push Docker image
+      - name: Test the built image
+        run: |
+          echo "Testing the built lombard image..."
+          docker run --rm lombard:${{ env.VERSION }} ledgerd version
+          echo "✅ ledgerd binary is working!"
+
+      - name: Tag and push Docker image (only for releases)
+        if: ${{ env.IS_RELEASE == 'true' }}
         run: |
           docker tag lombard:${{ env.VERSION }} ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:lombard-${{ env.VERSION }}
           docker push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:lombard-${{ env.VERSION }}
+          echo "✅ Released image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:lombard-${{ env.VERSION }}"
