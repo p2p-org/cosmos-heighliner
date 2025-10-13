@@ -52,20 +52,15 @@ jobs:
             echo "IS_RELEASE=false" >> $GITHUB_ENV
           fi
 
-      - name: Configure private repo access
-        run: |
-          git config --global url."https://${{ secrets.PRIVATE_GITHUB_TOKEN }}@github.com/".insteadOf "https://github.com/"
-
       - name: Manually pull the base Docker image
         run: |
           echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin
           docker pull ghcr.io/p2p-org/cosmos-heighliner:infra-toolkit-${{ env.INFRA_TOOLKIT }}
 
       - name: Build lombard Docker image
-        env:
-          GITHUB_TOKEN: ${{ secrets.PRIVATE_GITHUB_TOKEN }}
         run: |
-          ./heighliner build -c lombard --git-ref ${{ env.VERSION }} -s
+          echo "Using Dockerfile: cosmos (cosmos/native.Dockerfile) with SSH external service account key"
+          ./heighliner build -c lombard --git-ref ${{ env.VERSION }} --clone-key "${{ secrets.LOMBARD_CLONE_KEY }}" -s
 
       - name: Test the built image
         run: |
