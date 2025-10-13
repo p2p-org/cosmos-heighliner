@@ -52,25 +52,20 @@ jobs:
             echo "IS_RELEASE=false" >> $GITHUB_ENV
           fi
 
+      - name: Configure private repo access
+        run: |
+          git config --global url."https://${{ secrets.PRIVATE_GITHUB_TOKEN }}@github.com/".insteadOf "https://github.com/"
+
       - name: Manually pull the base Docker image
         run: |
           echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin
           docker pull ghcr.io/p2p-org/cosmos-heighliner:infra-toolkit-${{ env.INFRA_TOOLKIT }}
 
-      - name: Debug clone key (check if secret exists)
-        run: |
-          if [ -z "${{ secrets.LOMBARD_CLONE_KEY }}" ]; then
-            echo "❌ LOMBARD_CLONE_KEY secret is not set!"
-            exit 1
-          else
-            echo "✅ LOMBARD_CLONE_KEY secret is set (length: ${#LOMBARD_CLONE_KEY})"
-          fi
-        env:
-          LOMBARD_CLONE_KEY: ${{ secrets.LOMBARD_CLONE_KEY }}
-
       - name: Build lombard Docker image
+        env:
+          GITHUB_TOKEN: ${{ secrets.PRIVATE_GITHUB_TOKEN }}
         run: |
-          ./heighliner build -c lombard --git-ref ${{ env.VERSION }} --clone-key "${{ secrets.LOMBARD_CLONE_KEY }}" -s
+          ./heighliner build -c lombard --git-ref ${{ env.VERSION }} -s
 
       - name: Test the built image
         run: |
@@ -78,7 +73,7 @@ jobs:
           docker run --rm lombard:${{ env.VERSION }} ledgerd version
           echo "✅ ledgerd binary is working!"
 
-      - name: Tag and push Docker image (only for releases)
+      - name: Tag and push Docker image
         if: ${{ env.IS_RELEASE == 'true' }}
         run: |
           docker tag lombard:${{ env.VERSION }} ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:lombard-${{ env.VERSION }}
