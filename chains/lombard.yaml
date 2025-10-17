@@ -4,5 +4,9 @@
   github-repo: ledger
   dockerfile: cosmos
   build-target: make install
+  pre-build: |
+    wget -O /usr/lib/libwasmvm.x86_64.so https://github.com/CosmWasm/wasmvm/releases/download/v2.2.4/libwasmvm.x86_64.so
   binaries:
     - /root/go/bin/ledgerd
+  libraries:
+    - /usr/lib/libwasmvm.x86_64.so
