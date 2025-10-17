@@ -1,4 +1,4 @@
-[![Conforms to README.lint](https://img.shields.io/badge/README.lint-conforming-brightgreen)](https://github.com/p2p-org/readme-dot-lint)
+[![Conforms to README.lint](https://img.shields.io/badge/README.lint-conforming-brightgreen)](https://github.com/strangelove-ventures/heighliner)
 
 
 🌌 Why use Heighliner?
@@ -13,10 +13,10 @@ We built Heighliner to streamline the management and building of production-grad
 
 Heighliner container images are useful for anyone who's responsible for infrastructure deployments like
 
-- validator + [horcrux](https://github.com/p2p-org/horcrux),
+- validator + [horcrux](https://github.com/strangelove-ventures/horcrux),
 - full nodes,
 - archive nodes,
-- end-to-end testing ([interchaintest](https://github.com/p2p-org/interchaintest)),
+- end-to-end testing ([interchaintest](https://github.com/strangelove-ventures/interchaintest)),
 - and more.
 
 🌌🌌🌌 What does Heighliner do?
@@ -39,12 +39,12 @@ For further instructions see: [addChain.md](./addChain.md)
 
 ## Add Heighliner Images to your Chain Repo
 
-To publish heighliner images on your chain repository and/or incorporate heighliner images into your chain repo's CI/CD flow, see [heighliner-build-action](https://github.com/p2p-org/heighliner-build-action)
+To publish heighliner images on your chain repository and/or incorporate heighliner images into your chain repo's CI/CD flow, see [heighliner-build-action](https://github.com/strangelove-ventures/heighliner-build-action)
 
 ## Build Your Own
 
 If you would like to build the images yourself, heighliner is a CLI tool to help you do so.
-Download the latest [release](https://github.com/p2p-org/heighliner/releases), or build it yourself with:
+Download the latest [release](https://github.com/strangelove-ventures/heighliner/releases), or build it yourself with:
 
 ```shell
 make build
