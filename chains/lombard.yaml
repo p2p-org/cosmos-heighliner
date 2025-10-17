@@ -5,7 +5,7 @@
   dockerfile: cosmos
   build-target: make install
   binaries:
-    - /root/go/bin/ledgerd
+    - /go/bin/ledgerd
   build-env:
     - BUILD_TAGS=muslc
   libraries:
