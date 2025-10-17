@@ -8,5 +8,3 @@
     - /go/bin/ledgerd
   build-env:
     - BUILD_TAGS=muslc
-  libraries:
-    - /lib/libwasmvm_muslc.${ARCH}.a
