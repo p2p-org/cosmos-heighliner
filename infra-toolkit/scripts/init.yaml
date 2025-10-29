@@ -1,0 +1,358 @@
+  initContainers:
+  - args:
+    - -c
+    - rm -rf "$HOME/.tmp/*"
+    command:
+    - sh
+    env:
+    - name: HOME
+      value: /home/operator
+    - name: CHAIN_HOME
+      value: /home/operator/.celestia
+    - name: GENESIS_FILE
+      value: /home/operator/.celestia/config/genesis.json
+    - name: ADDRBOOK_FILE
+      value: /home/operator/.celestia/config/addrbook.json
+    - name: CONFIG_DIR
+      value: /home/operator/.celestia/config
+    - name: DATA_DIR
+      value: /home/operator/.celestia/data
+    image: ghcr.io/p2p-org/cosmos-heighliner:infra-toolkit-v0.1.6
+    imagePullPolicy: Always
+    name: clean-init
+    resources: {}
+    terminationMessagePath: /dev/termination-log
+    terminationMessagePolicy: File
+    volumeMounts:
+    - mountPath: /home/operator/.celestia
+      name: vol-chain-home
+    - mountPath: /tmp
+      name: vol-system-tmp
+    - mountPath: /home/operator/.tmp
+      name: vol-tmp
+    - mountPath: /home/operator/.config
+      name: vol-config
+    - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+      name: kube-api-access-f865k
+      readOnly: true
+    workingDir: /home/operator
+  - args:
+    - -c
+    - "\nset -eu\nif [ ! -d \"$CHAIN_HOME/data\" ]; then\n\techo \"Initializing chain...\"\n\tcelestia-appd
+      init --chain-id mocha-4 celestia-testnet-p2p-0 --home \"$CHAIN_HOME\"\nelse\n\techo
+      \"Skipping chain init; already initialized.\"\nfi\n\necho \"Initializing into
+      tmp dir for downstream processing...\"\ncelestia-appd init --chain-id mocha-4
+      celestia-testnet-p2p-0 --home \"$HOME/.tmp\"\n"
+    command:
+    - sh
+    env:
+    - name: HOME
+      value: /home/operator
+    - name: CHAIN_HOME
+      value: /home/operator/.celestia
+    - name: GENESIS_FILE
+      value: /home/operator/.celestia/config/genesis.json
+    - name: ADDRBOOK_FILE
+      value: /home/operator/.celestia/config/addrbook.json
+    - name: CONFIG_DIR
+      value: /home/operator/.celestia/config
+    - name: DATA_DIR
+      value: /home/operator/.celestia/data
+    image: ghcr.io/p2p-org/cosmos-heighliner:celestia-app-v6.2.0-mocha
+    imagePullPolicy: Always
+    name: chain-init
+    resources: {}
+    terminationMessagePath: /dev/termination-log
+    terminationMessagePolicy: File
+    volumeMounts:
+    - mountPath: /home/operator/.celestia
+      name: vol-chain-home
+    - mountPath: /tmp
+      name: vol-system-tmp
+    - mountPath: /home/operator/.tmp
+      name: vol-tmp
+    - mountPath: /home/operator/.config
+      name: vol-config
+    - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+      name: kube-api-access-f865k
+      readOnly: true
+    workingDir: /home/operator
+  - args:
+    - -c
+    - |
+      ls $DATA_DIR/*.db 1> /dev/null 2>&1
+      DB_INIT=$?
+      if [ $DB_INIT -eq 0 ] || [ -d "$DATA_DIR/db" ]; then
+          echo "Database already initialized, skipping genesis initialization"
+          exit 0
+      fi
+
+      set -eu
+
+      # $GENESIS_FILE and $CONFIG_DIR already set via pod env vars.
+
+      GENESIS_URL="$1"
+
+      echo "Downloading genesis file $GENESIS_URL to $GENESIS_FILE..."
+
+      download_json() {
+        echo "Downloading plain json..."
+        wget -c -O "$GENESIS_FILE" "$GENESIS_URL"
+      }
+
+      download_jsongz() {
+        echo "Downloading json.gz..."
+        wget -c -O - "$GENESIS_URL" | gunzip -c >"$GENESIS_FILE"
+      }
+
+      download_tar() {
+        echo "Downloading and extracting tar..."
+        wget -c -O - "$GENESIS_URL" | tar -x -C "$CONFIG_DIR"
+      }
+
+      download_targz() {
+        echo "Downloading and extracting compressed tar..."
+        wget -c -O - "$GENESIS_URL" | tar -xz -C "$CONFIG_DIR"
+      }
+
+      download_zip() {
+        echo "Downloading and extracting zip..."
+        wget -c -O tmp_genesis.zip "$GENESIS_URL"
+        unzip tmp_genesis.zip
+        rm tmp_genesis.zip
+        mv genesis.json "$GENESIS_FILE"
+      }
+
+      rm -f "$GENESIS_FILE"
+
+      case "$GENESIS_URL" in
+      *.json.gz) download_jsongz ;;
+      *.json) download_json ;;
+      *.tar.gz) download_targz ;;
+      *.tar.gzip) download_targz ;;
+      *.tar) download_tar ;;
+      *.zip) download_zip ;;
+      *)
+        echo "Unable to handle file extension for $GENESIS_URL"
+        exit 1
+        ;;
+      esac
+
+      echo "Saved genesis file to $GENESIS_FILE."
+      echo "Download genesis file complete."
+
+
+      echo "Genesis $GENESIS_FILE initialized."
+    - -s
+    - https://github.com/p2p-org/devops-tendermint-public/releases/download/genesis-collection/genesis-celestia-testnet.json
+    command:
+    - sh
+    env:
+    - name: HOME
+      value: /home/operator
+    - name: CHAIN_HOME
+      value: /home/operator/.celestia
+    - name: GENESIS_FILE
+      value: /home/operator/.celestia/config/genesis.json
+    - name: ADDRBOOK_FILE
+      value: /home/operator/.celestia/config/addrbook.json
+    - name: CONFIG_DIR
+      value: /home/operator/.celestia/config
+    - name: DATA_DIR
+      value: /home/operator/.celestia/data
+    image: ghcr.io/p2p-org/cosmos-heighliner:infra-toolkit-v0.1.6
+    imagePullPolicy: Always
+    name: genesis-init
+    resources: {}
+    terminationMessagePath: /dev/termination-log
+    terminationMessagePolicy: File
+    volumeMounts:
+    - mountPath: /home/operator/.celestia
+      name: vol-chain-home
+    - mountPath: /tmp
+      name: vol-system-tmp
+    - mountPath: /home/operator/.tmp
+      name: vol-tmp
+    - mountPath: /home/operator/.config
+      name: vol-config
+    - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+      name: kube-api-access-f865k
+      readOnly: true
+    workingDir: /home/operator
+  - args:
+    - -c
+    - "ls $CONFIG_DIR/addrbook.json 1> /dev/null 2>&1\nADDRBOOK_EXISTS=$?\nif [ $ADDRBOOK_EXISTS
+      -eq 0 ]; then\n\techo \"Address book already exists\"\n\texit 0\nfi\nls -l $CONFIG_DIR/addrbook.json
+      \nset -eu\n\n# $ADDRBOOK_FILE and $CONFIG_DIR already set via pod env vars.\n\nADDRBOOK_URL=\"$1\"\n\necho
+      \"Downloading address book file $ADDRBOOK_URL to $ADDRBOOK_FILE...\"\n\ndownload_json()
+      {\n  echo \"Downloading plain json...\"\n  wget -c -O \"$ADDRBOOK_FILE\" \"$ADDRBOOK_URL\"\n}\n\ndownload_jsongz()
+      {\n  echo \"Downloading json.gz...\"\n  wget -c -O - \"$ADDRBOOK_URL\" | gunzip
+      -c >\"$ADDRBOOK_FILE\"\n}\n\ndownload_tar() {\n  echo \"Downloading and extracting
+      tar...\"\n  wget -c -O - \"$ADDRBOOK_URL\" | tar -x -C \"$CONFIG_DIR\"\n}\n\ndownload_targz()
+      {\n  echo \"Downloading and extracting compressed tar...\"\n  wget -c -O - \"$ADDRBOOK_URL\"
+      | tar -xz -C \"$CONFIG_DIR\"\n}\n\ndownload_zip() {\n  echo \"Downloading and
+      extracting zip...\"\n  wget -c -O tmp_genesis.zip \"$ADDRBOOK_URL\"\n  unzip
+      tmp_genesis.zip\n  rm tmp_genesis.zip\n  mv genesis.json \"$ADDRBOOK_FILE\"\n}\n\nrm
+      -f \"$ADDRBOOK_FILE\"\n\ncase \"$ADDRBOOK_URL\" in\n*.json.gz) download_jsongz
+      ;;\n*.json) download_json ;;\n*.tar.gz) download_targz ;;\n*.tar.gzip) download_targz
+      ;;\n*.tar) download_tar ;;\n*.zip) download_zip ;;\n*)\n  echo \"Unable to handle
+      file extension for $ADDRBOOK_URL\"\n  exit 1\n  ;;\nesac\n\necho \"Saved address
+      book file to $ADDRBOOK_FILE.\"\necho \"Download address book file complete.\"\n\nls
+      -l $CONFIG_DIR/addrbook.json \n\necho \"Address book $ADDRBOOK_FILE downloaded\"\n"
+    - -s
+    - https://snapshots.polkachu.com/testnet-addrbook/celestia/addrbook.json
+    command:
+    - sh
+    env:
+    - name: HOME
+      value: /home/operator
+    - name: CHAIN_HOME
+      value: /home/operator/.celestia
+    - name: GENESIS_FILE
+      value: /home/operator/.celestia/config/genesis.json
+    - name: ADDRBOOK_FILE
+      value: /home/operator/.celestia/config/addrbook.json
+    - name: CONFIG_DIR
+      value: /home/operator/.celestia/config
+    - name: DATA_DIR
+      value: /home/operator/.celestia/data
+    image: ghcr.io/p2p-org/cosmos-heighliner:infra-toolkit-v0.1.6
+    imagePullPolicy: Always
+    name: addrbook-init
+    resources: {}
+    terminationMessagePath: /dev/termination-log
+    terminationMessagePolicy: File
+    volumeMounts:
+    - mountPath: /home/operator/.celestia
+      name: vol-chain-home
+    - mountPath: /tmp
+      name: vol-system-tmp
+    - mountPath: /home/operator/.tmp
+      name: vol-tmp
+    - mountPath: /home/operator/.config
+      name: vol-config
+    - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+      name: kube-api-access-f865k
+      readOnly: true
+    workingDir: /home/operator
+  - args:
+    - -c
+    - "\nset -eu\nCONFIG_DIR=\"$CHAIN_HOME/config\"\nTMP_DIR=\"$HOME/.tmp/config\"\nOVERLAY_DIR=\"$HOME/.config\"\n\n#
+      This is a hack to prevent adding another init container.\n# Ideally, this step
+      is not concerned with merging config, so it would live elsewhere.\n# The node
+      key is a secret mounted into the main \"node\" container, so we do not need
+      this one.\necho \"Removing node key from chain's init subcommand...\"\nrm -rf
+      \"$CONFIG_DIR/node_key.json\"\n\necho \"Merging config...\"\nset -x\n\nif [
+      -f \"$TMP_DIR/config.toml\" ]; then\n\tconfig-merge -f toml \"$TMP_DIR/config.toml\"
+      \"$OVERLAY_DIR/config-overlay.toml\" > \"$CONFIG_DIR/config.toml\"\nfi\nif [
+      -f \"$TMP_DIR/app.toml\" ]; then\n\tconfig-merge -f toml \"$TMP_DIR/app.toml\"
+      \"$OVERLAY_DIR/app-overlay.toml\" > \"$CONFIG_DIR/app.toml\"\nfi\n"
+    command:
+    - sh
+    env:
+    - name: HOME
+      value: /home/operator
+    - name: CHAIN_HOME
+      value: /home/operator/.celestia
+    - name: GENESIS_FILE
+      value: /home/operator/.celestia/config/genesis.json
+    - name: ADDRBOOK_FILE
+      value: /home/operator/.celestia/config/addrbook.json
+    - name: CONFIG_DIR
+      value: /home/operator/.celestia/config
+    - name: DATA_DIR
+      value: /home/operator/.celestia/data
+    image: ghcr.io/p2p-org/cosmos-heighliner:infra-toolkit-v0.1.6
+    imagePullPolicy: Always
+    name: config-merge
+    resources: {}
+    terminationMessagePath: /dev/termination-log
+    terminationMessagePolicy: File
+    volumeMounts:
+    - mountPath: /home/operator/.celestia
+      name: vol-chain-home
+    - mountPath: /tmp
+      name: vol-system-tmp
+    - mountPath: /home/operator/.tmp
+      name: vol-tmp
+    - mountPath: /home/operator/.config
+      name: vol-config
+    - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+      name: kube-api-access-f865k
+      readOnly: true
+    workingDir: /home/operator
+  - args:
+    - -c
+    - "set -eu\nif test -n \"$(find $DATA_DIR -maxdepth 1 -name '*.db' -print -quit)\"
+      || [ -d \"$DATA_DIR/db\" ]; then\n\techo \"Databases in $DATA_DIR already exists;
+      skipping initialization.\"\n\texit 0\nfi\n\nset -eu\n\n# $CHAIN_HOME already
+      set via pod env vars.\n\nSNAPSHOT_URL=\"$1\"\n\necho \"Downloading snapshot
+      archive $SNAPSHOT_URL to $CHAIN_HOME...\"\n\ndownload_tar() {\n  echo \"Downloading
+      and extracting tar...\"\n  wget -c -O - \"$SNAPSHOT_URL\" | tar -x -C \"$CHAIN_HOME\"\n}\n\ndownload_targz()
+      {\n  echo \"Downloading and extracting compressed tar...\"\n  wget -c -O - \"$SNAPSHOT_URL\"
+      | tar -xz -C \"$CHAIN_HOME\"\n}\n\ndownload_lz4() {\n  echo \"Downloading and
+      extracting lz4...\"\n  wget -c -O - \"$SNAPSHOT_URL\" | lz4 -c -d | tar -x -C
+      \"$CHAIN_HOME\"\n}\n\ndownload_zst() {\n    echo \"Downloading and extracting
+      zst...\"\n    wget -c -O - \"$SNAPSHOT_URL\" | zstd -d --stdout | tar -x -C
+      \"$CHAIN_HOME\"\n}\n\ndownload_lz4_raw() {\n  echo \"Downloading and extracting
+      raw lz4...\"\n  wget -c -O - \"$SNAPSHOT_URL\" | lz4 -d | tar -x -C \"$CHAIN_HOME\"\n}\n\ncase
+      \"$SNAPSHOT_URL\" in\n*.tar.lz4) download_lz4 ;;\n*.tar.zst) download_zst ;;\n*.tar.gzip)
+      download_targz ;;\n*.tar.gz) download_targz ;;\n*.tar) download_tar ;;\n*.lz4)
+      download_lz4_raw ;;\n*)\n  echo \"Unable to handle file extension for $SNAPSHOT_URL\"\n
+      \ exit 1\n  ;;\nesac\n\necho \"Download and extract snapshot complete.\"\n\n\necho
+      \"$DATA_DIR initialized.\"\n"
+    - -s
+    - https://snapshots.polkachu.com/testnet-snapshots/celestia/celestia_7919786.tar.lz4
+    command:
+    - sh
+    env:
+    - name: HOME
+      value: /home/operator
+    - name: CHAIN_HOME
+      value: /home/operator/.celestia
+    - name: GENESIS_FILE
+      value: /home/operator/.celestia/config/genesis.json
+    - name: ADDRBOOK_FILE
+      value: /home/operator/.celestia/config/addrbook.json
+    - name: CONFIG_DIR
+      value: /home/operator/.celestia/config
+    - name: DATA_DIR
+      value: /home/operator/.celestia/data
+    image: ghcr.io/p2p-org/cosmos-heighliner:infra-toolkit-v0.1.6
+    imagePullPolicy: Always
+    name: snapshot-restore
+    resources: {}
+    terminationMessagePath: /dev/termination-log
+    terminationMessagePolicy: File
+    volumeMounts:
+    - mountPath: /home/operator/.celestia
+      name: vol-chain-home
+    - mountPath: /tmp
+      name: vol-system-tmp
+    - mountPath: /home/operator/.tmp
+      name: vol-tmp
+    - mountPath: /home/operator/.config
+      name: vol-config
+    - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+      name: kube-api-access-f865k
+      readOnly: true
+    workingDir: /home/operator
+  - command:
+    - /manager
+    - versioncheck
+    env:
+    - name: HOME
+      value: /home/operator
+    - name: CHAIN_HOME
+      value: /home/operator/.celestia
+    - name: GENESIS_FILE
+      value: /home/operator/.celestia/config/genesis.json
+    - name: ADDRBOOK_FILE
+      value: /home/operator/.celestia/config/addrbook.json
+    - name: CONFIG_DIR
+      value: /home/operator/.celestia/config
+    - name: DATA_DIR
+      value: /home/operator/.celestia/data
+    image: ghcr.io/p2p-org/cosmos-operator:main
+    imagePullPolicy: Always
+    name: version-check

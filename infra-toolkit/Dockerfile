@@ -98,3 +98,7 @@ RUN if [ "$(uname -m)" = "aarch64" ]; then \
 
 # Copy kubectl from alpine/kubectl image
 COPY --from=kubectl /usr/local/bin/kubectl /usr/local/bin/kubectl
+
+# Copy init container scripts
+COPY scripts/ /scripts/
+RUN chmod +x /scripts/*.sh
