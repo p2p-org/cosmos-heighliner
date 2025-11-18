@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 # Snapshot restore script
 # Downloads and extracts chain snapshot data
 

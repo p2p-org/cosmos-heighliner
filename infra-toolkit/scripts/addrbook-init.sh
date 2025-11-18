@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 # Address book initialization script
 # Downloads and processes the address book file
 

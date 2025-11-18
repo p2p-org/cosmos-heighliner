@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 # Common download utility functions for init container scripts
 # This script can be sourced by other scripts to use these functions
 

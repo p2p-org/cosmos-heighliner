@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 # Genesis initialization script
 # Downloads and processes the genesis file
 

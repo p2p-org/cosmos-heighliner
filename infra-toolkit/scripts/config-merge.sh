@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 # Configuration merge script
 # Merges chain config files with overlay configurations
 
