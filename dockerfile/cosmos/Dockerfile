@@ -1,7 +1,7 @@
 ARG BASE_VERSION
 FROM --platform=$BUILDPLATFORM golang:${BASE_VERSION} AS build-env
 
-RUN apk add --update --no-cache curl make git libc-dev bash gcc linux-headers eudev-dev git-lfs
+RUN apk add --update --no-cache binutils binutils-gold curl make git libc-dev bash gcc linux-headers eudev-dev git-lfs
 
 ARG TARGETARCH
 ARG BUILDARCH
@@ -31,11 +31,16 @@ WORKDIR /go/src/${REPO_HOST}/${GITHUB_ORGANIZATION}
 ARG GITHUB_REPO
 ARG VERSION
 ARG BUILD_TIMESTAMP
+ARG SKIP_LFS
 
-RUN git clone -b ${VERSION} --single-branch https://${REPO_HOST}/${GITHUB_ORGANIZATION}/${GITHUB_REPO}.git --recursive \
-    && cd ${GITHUB_REPO} \
-    && git lfs install \
-    && git lfs pull
+# Conditionally skip LFS smudging during clone if SKIP_LFS is set.
+RUN if [ ! -z "${SKIP_LFS}" ]; then \
+      GIT_LFS_SKIP_SMUDGE=1 git clone -b ${VERSION} --single-branch https://${REPO_HOST}/${GITHUB_ORGANIZATION}/${GITHUB_REPO}.git --recursive; \
+    else \
+      git clone -b ${VERSION} --single-branch https://${REPO_HOST}/${GITHUB_ORGANIZATION}/${GITHUB_REPO}.git --recursive \
+      && cd ${GITHUB_REPO} \
+      && git lfs install && git lfs pull; \
+    fi
 
 WORKDIR /go/src/${REPO_HOST}/${GITHUB_ORGANIZATION}/${GITHUB_REPO}
 
