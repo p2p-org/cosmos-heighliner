@@ -3,8 +3,9 @@
   github-organization: osmosis-labs
   github-repo: osmosis
   dockerfile: cosmos
-  build-target: make build
+  build-target: make install
   binaries:
-    - build/osmosisd
+    - /go/bin/osmosisd
   build-env:
     - BUILD_TAGS=muslc
+  skip-lfs: true

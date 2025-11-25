@@ -495,6 +495,12 @@ func (h *HeighlinerBuilder) buildChainNodeDockerImage(
 		"RACE":                race,
 	}
 
+	skipLfs := ""
+	if chainConfig.Build.SkipLfs {
+		skipLfs = "true"
+	}
+	buildArgs["SKIP_LFS"] = skipLfs
+
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(time.Minute*180))
 	defer cancel()
 
