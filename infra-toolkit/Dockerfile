@@ -1,100 +1,56 @@
-FROM --platform=$BUILDPLATFORM alpine:3 AS build-env
+FROM alpine/kubectl:latest AS kubectl
 
-RUN apk add --update --no-cache \
-  bash \
-  curl \
-  eudev-dev \
-  gcc \
-  git \
-  libc-dev \
-  linux-headers \
-  make \
-  wget \
-  bison \
-  flex \
-  automake \
-  autoconf \
-  libtool
+FROM golang:alpine AS envsubst-build
 
-ARG TARGETARCH
-ARG BUILDARCH
+# Build envsubst from Go
+RUN apk add --no-cache git && \
+    CGO_ENABLED=0 go install github.com/a8m/envsubst/cmd/envsubst@latest
 
-RUN LIBDIR=/lib; \
-    if [ "${TARGETARCH}" = "arm64" ]; then \
-      ARCH=aarch64; \
-      if [ "${BUILDARCH}" != "arm64" ]; then \
-        wget -c https://musl.cc/aarch64-linux-musl-cross.tgz -O - | tar -xzvv --strip-components 1 -C /usr; \
-        LIBDIR=/usr/aarch64-linux-musl/lib; \
-        mkdir -p $LIBDIR; \
-      fi; \
-    elif [ "${TARGETARCH}" = "amd64" ]; then \
-      ARCH=x86_64; \
-      if [ "${BUILDARCH}" != "amd64" ]; then \
-        wget -c https://musl.cc/x86_64-linux-musl-cross.tgz -O - | tar -xzvv --strip-components 1 -C /usr; \
-        LIBDIR=/usr/x86_64-linux-musl/lib; \
-        mkdir -p $LIBDIR; \
-      fi; \
-    fi;
+FROM node:alpine AS build-env
 
-# Build minimal busybox
-WORKDIR /
-# busybox v1.34.1 stable
-RUN git clone -b 1_34_1 --single-branch https://git.busybox.net/busybox
-WORKDIR /busybox
-ADD busybox.min.config .config
-RUN if [ "${TARGETARCH}" = "arm64" ] && [ "${BUILDARCH}" != "arm64" ]; then \
-      export CC=aarch64-linux-musl-gcc; \
-    elif [ "${TARGETARCH}" = "amd64" ] && [ "${BUILDARCH}" != "amd64" ]; then \
-      export CC=x86_64-linux-musl-gcc; \
-    fi; \
-    make
+# Update all packages to latest
+RUN apk update && apk upgrade --no-cache
 
-# Static jq
-WORKDIR /
-RUN git clone --recursive -b jq-1.6 --single-branch https://github.com/stedolan/jq.git
-WORKDIR /jq
-RUN autoreconf -fi;\
-  ./configure --with-oniguruma=builtin;\ 
-  make LDFLAGS=-all-static
+# Install build dependencies
+RUN apk add --no-cache git yarn
 
-FROM boxboat/config-merge:0.2.1 as config-merge
+# Build config-merge from source (it's a Node.js tool)
+RUN git clone https://github.com/boxboat/config-merge.git /tmp/config-merge && \
+    cd /tmp/config-merge && \
+    yarn install && \
+    mkdir -p /usr/local/config-merge && \
+    cp config-merge.js source.sh package.json wrapper.sh /usr/local/config-merge/ && \
+    ln -s /usr/local/config-merge/wrapper.sh /usr/local/bin/config-merge && \
+    rm -rf /tmp/config-merge /root/.cache /root/.yarn
 
-FROM alpine/kubectl:latest as kubectl
+FROM alpine:latest
 
-FROM alpine:3
+# Update all packages to latest
+RUN apk update && apk upgrade --no-cache
 
+# Install packages available from Alpine repos
 RUN apk add --no-cache \
+  bash \
+  busybox \
   curl \
+  gettext \
+  jq \
   lz4 \
-  nano \
+  nodejs \
   npm \
   wget \
   zstd-dev
 
-# Install busybox
-COPY --from=build-env /busybox/busybox /busybox/busybox
+# Copy envsubst from build stage (works for any architecture)
+COPY --from=envsubst-build /go/bin/envsubst /usr/local/bin/envsubst
 
-# Install jq
-COPY --from=build-env /jq/jq /usr/local/bin/jq
+# Copy config-merge from build stage
+COPY --from=build-env /usr/local/config-merge /usr/local/config-merge
+COPY --from=build-env /usr/local/bin/config-merge /usr/local/bin/config-merge
+RUN cd /usr/local/config-merge && npm install --production && rm -rf /root/.npm
 
-# Add config-merge
-COPY --from=config-merge /usr/local/config-merge /usr/local/config-merge
-COPY --from=config-merge /usr/local/bin/config-merge /usr/local/bin/config-merge
-COPY --from=config-merge /usr/local/bin/envsubst /usr/local/bin/envsubst
-
-# Add dasel.
-# The dasel repository does not post checksums of the published binaries,
-# so use hardcoded binaries in order to avoid potential supply chain attacks.
-# Note, dasel does publish docker images, but only for amd64,
-# so we cannot copy the binary out like we do for config-merge.
-RUN if [ "$(uname -m)" = "aarch64" ]; then \
-      ARCH=arm64 DASELSUM="8e1f95b5f361f68ed8376d5a9593ae4249e28153a05b26f1f99f9466efeac5c9  /usr/local/bin/dasel"; \
-    else \
-      ARCH=amd64 DASELSUM="3efd202a525c43c027bddc770861dd637ec8389a4ca3ef2951da7165350219ed  /usr/local/bin/dasel"; \
-    fi; \
-    wget -O /usr/local/bin/dasel https://github.com/TomWright/dasel/releases/download/v1.26.0/dasel_linux_$ARCH && \
-      sha256sum -c <(echo "$DASELSUM") && \
-      chmod +x /usr/local/bin/dasel
+# Create symlink for busybox at /busybox/busybox for compatibility with existing consumers
+RUN mkdir -p /busybox && ln -s /bin/busybox /busybox/busybox
 
 # Copy kubectl from alpine/kubectl image
 COPY --from=kubectl /usr/local/bin/kubectl /usr/local/bin/kubectl
