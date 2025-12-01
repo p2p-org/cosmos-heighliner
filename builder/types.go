@@ -39,6 +39,7 @@ type ChainNodeConfig struct {
 	Platforms          []string       `yaml:"platforms"`
 	BuildEnv           []string       `yaml:"build-env"`
 	BaseImage          string         `yaml:"base-image"`
+	SkipLfs            bool           `yaml:"skip-lfs"`
 }
 
 type ChainNodeDockerBuildConfig struct {
