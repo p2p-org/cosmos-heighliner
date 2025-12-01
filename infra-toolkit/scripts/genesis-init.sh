@@ -14,9 +14,8 @@ if [ -d "$DATA_DIR/db" ]; then
 fi
 
 # Source download utilities if available
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-if [ -f "$SCRIPT_DIR/download-utils.sh" ]; then
-    source "$SCRIPT_DIR/download-utils.sh"
+if [ -f "./download-utils.sh" ]; then
+    source "./download-utils.sh"
 else
     echo "Warning: download-utils.sh not found, download functions may not work"
 fi
