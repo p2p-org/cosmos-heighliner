@@ -2,7 +2,7 @@
 # Configuration merge script
 # Merges chain config files with overlay configurations
 
-set -eu
+set -eux
 
 # Construct paths from HOME and CHAIN_HOME
 CHAIN_HOME="/home/operator/$homeDir"
@@ -11,7 +11,6 @@ TMP_DIR="$HOME/.tmp/config"
 OVERLAY_DIR="$HOME/.config"
 
 echo "Merging config..."
-set -x
 
 if [ -f "$TMP_DIR/config.toml" ]; then
     config-merge -f toml "$TMP_DIR/config.toml" "$OVERLAY_DIR/config-overlay.toml" > "$CONFIG_DIR/config.toml"
@@ -19,7 +18,5 @@ fi
 if [ -f "$TMP_DIR/app.toml" ]; then
     config-merge -f toml "$TMP_DIR/app.toml" "$OVERLAY_DIR/app-overlay.toml" > "$CONFIG_DIR/app.toml"
 fi
-
-set +x
 
 echo "Config merge complete."

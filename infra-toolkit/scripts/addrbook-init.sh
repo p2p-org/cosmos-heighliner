@@ -2,14 +2,12 @@
 # Address book initialization script
 # Downloads and processes the address book file
 
-set -eu
+set -eux
 
-CONFIG_DIR="/home/operator/$homeDir/.config"
+ADDRBOOK_FILE=$CONFIG_DIR/addrbook.json
 
 # Check if address book already exists
-ls "$CONFIG_DIR/addrbook.json" 1> /dev/null 2>&1
-ADDRBOOK_EXISTS=$?
-if [ $ADDRBOOK_EXISTS -eq 0 ]; then
+if [ -f "$ADDRBOOK_FILE" ]; then
     echo "Address book already exists"
     exit 0
 fi
@@ -29,8 +27,6 @@ if [ -z "$ADDRBOOK_URL" ]; then
     echo "Error: ADDRBOOK_URL must be provided as argument or environment variable"
     exit 1
 fi
-
-ls -l "$CONFIG_DIR/addrbook.json" 2>/dev/null || true
 
 echo "Downloading address book file $ADDRBOOK_URL to $ADDRBOOK_FILE..."
 

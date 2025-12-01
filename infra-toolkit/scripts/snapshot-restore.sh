@@ -2,12 +2,12 @@
 # Snapshot restore script
 # Downloads and extracts chain snapshot data
 
-set -eu
+set -eux
 
 CHAIN_HOME="/home/operator/$homeDir"
 
 # Check if database already exists
-if test -n "$(find "$DATA_DIR" -maxdepth 1 -name '*.db' -print -quit)" || [ -d "$DATA_DIR/db" ]; then
+if [ -d "$DATA_DIR/db" ]; then
     echo "Databases in $DATA_DIR already exists; skipping initialization."
     exit 0
 fi

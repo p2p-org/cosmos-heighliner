@@ -2,14 +2,13 @@
 # Genesis initialization script
 # Downloads and processes the genesis file
 
-set -eu
+set -eux
 
 GENESIS_FILE=$CONFIG_DIR/genesis.json
 
 # Check if database already exists
-ls "$DATA_DIR"/*.db 1> /dev/null 2>&1
-DB_INIT=$?
-if [ $DB_INIT -eq 0 ] || [ -d "$DATA_DIR/db" ]; then
+echo "check datadir"
+if [ -d "$DATA_DIR/db" ]; then
     echo "Database already initialized, skipping genesis initialization"
     exit 0
 fi
