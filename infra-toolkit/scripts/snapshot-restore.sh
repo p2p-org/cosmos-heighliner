@@ -13,9 +13,8 @@ if [ -d "$DATA_DIR/db" ]; then
 fi
 
 # Source download utilities if available
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-if [ -f "$SCRIPT_DIR/download-utils.sh" ]; then
-    source "$SCRIPT_DIR/download-utils.sh"
+if [ -f "./download-utils.sh" ]; then
+    source "./download-utils.sh"
 else
     echo "Warning: download-utils.sh not found, download functions may not work"
 fi
@@ -27,9 +26,6 @@ if [ -z "$SNAPSHOT_URL" ]; then
     echo "Error: SNAPSHOT_URL must be provided as argument or environment variable"
     exit 1
 fi
-
-# Construct full chain home path
-CHAIN_HOME="$HOME/$CHAIN_HOME"
 
 echo "Downloading snapshot archive $SNAPSHOT_URL to $CHAIN_HOME..."
 
