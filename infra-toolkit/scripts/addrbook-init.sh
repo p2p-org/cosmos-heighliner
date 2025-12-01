@@ -13,9 +13,8 @@ if [ -f "$ADDRBOOK_FILE" ]; then
 fi
 
 # Source download utilities if available
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-if [ -f "$SCRIPT_DIR/download-utils.sh" ]; then
-    source "$SCRIPT_DIR/download-utils.sh"
+if [ -f "./download-utils.sh" ]; then
+    source "./download-utils.sh"
 else
     echo "Warning: download-utils.sh not found, download functions may not work"
 fi
@@ -40,13 +39,13 @@ case "$ADDRBOOK_URL" in
         download_json "$ADDRBOOK_URL" "$ADDRBOOK_FILE"
         ;;
     *.tar.gz)
-        download_targz "$ADDRBOOK_URL" "$CONFIG_DIR"
+        download_targz "$ADDRBOOK_URL" "$ADDRBOOK_FILE"
         ;;
     *.tar.gzip)
-        download_targz "$ADDRBOOK_URL" "$CONFIG_DIR"
+        download_targz "$ADDRBOOK_URL" "$ADDRBOOK_FILE"
         ;;
     *.tar)
-        download_tar "$ADDRBOOK_URL" "$CONFIG_DIR"
+        download_tar "$ADDRBOOK_URL" "$ADDRBOOK_FILE"
         ;;
     *.zip)
         download_zip "$ADDRBOOK_URL" "$ADDRBOOK_FILE"
@@ -59,7 +58,5 @@ esac
 
 echo "Saved address book file to $ADDRBOOK_FILE."
 echo "Download address book file complete."
-
-ls -l "$CONFIG_DIR/addrbook.json" 2>/dev/null || true
 
 echo "Address book $ADDRBOOK_FILE downloaded"
