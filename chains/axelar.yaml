@@ -5,7 +5,7 @@
   dockerfile: none
   pre-build: |
     set -eux
-    WASMVM_VERSION="v1.5.8"
+    WASMVM_VERSION="v2.2.4"
     wget https://axelar-releases.s3.us-east-2.amazonaws.com/axelard/${VERSION}/axelard-linux-amd64-${VERSION}.zip
     apt update && apt -y install unzip
     unzip axelard-linux-amd64-${VERSION}.zip
