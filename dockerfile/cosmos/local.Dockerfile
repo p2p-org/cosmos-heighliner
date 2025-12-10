@@ -1,7 +1,9 @@
 ARG BASE_VERSION
 FROM golang:${BASE_VERSION} AS init-env
 
-RUN apk add --update --no-cache curl make git libc-dev bash gcc linux-headers eudev-dev ncurses-dev
+RUN apk update && apk upgrade --no-cache && \
+    apk add --update --no-cache busybox && \
+    apk add --update --no-cache curl make git libc-dev bash gcc linux-headers eudev-dev ncurses-dev
 
 ARG TARGETARCH
 ARG BUILDARCH

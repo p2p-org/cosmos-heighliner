@@ -1,7 +1,9 @@
 ARG BASE_VERSION
 FROM golang:${BASE_VERSION} AS build-env
 
-RUN apk add --update --no-cache binutils binutils-gold curl make git libc-dev bash gcc linux-headers eudev-dev ncurses-dev git-lfs g++ libstdc++
+RUN apk update && apk upgrade --no-cache && \
+    apk add --update --no-cache busybox && \
+    apk add --update --no-cache binutils binutils-gold curl make git libc-dev bash gcc linux-headers eudev-dev ncurses-dev git-lfs g++ libstdc++
 
 ARG CLONE_KEY
 
@@ -187,10 +189,10 @@ COPY --from=build-env /root/bin /bin
 COPY --from=build-env /root/lib /lib
 
 # Install glibc library
-RUN apk add --update --no-cache libc6-compat
-
-# Upgrade apk
-RUN apk upgrade --no-cache
+RUN apk update && \
+    apk add --update --no-cache busybox && \
+    apk upgrade --no-cache --no-scripts && \
+    apk add --update --no-cache libc6-compat
 
 # # Install p2p user
 # RUN addgroup --gid 1111 -S p2p && adduser --uid 1111 -S p2p -G p2p
