@@ -49,7 +49,7 @@ jobs:
 
       - name: Build and push Saga Docker image
         run: |
-          ./heighliner build -c saga --git-ref ${{ env.VERSION }} --alpine-version 3.19
+          ./heighliner build -c saga --git-ref ${{ env.VERSION }} 
 
       - name: Tag and push Docker image
         run: |
