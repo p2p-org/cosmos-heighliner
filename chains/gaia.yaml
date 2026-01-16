@@ -2,11 +2,15 @@
 - name: gaia
   github-organization: cosmos
   github-repo: gaia
-  dockerfile: cargo
-  build-target: make install
+  dockerfile: cosmos
+  # due to v25.3.1 source code not publicly available, we need to download the binary and disable build
+  # build-target: make install
+  pre-build: |
+    wget https://github.com/cosmos/gaia/releases/download/v25.3.1/gaiad-v25.3.1-linux-amd64 -O /go/bin/gaiad
+    chmod +x /go/bin/gaiad
   build-env:
     - LEDGER_ENABLED=false
+    - BUILD_TAGS=muslc
   binaries:
-    - /root/go/bin/gaiad
-  libraries:
-    - /root/go/pkg/mod/github.com/!cosm!wasm/wasmvm/*/internal/api/libwasmvm.${ARCH}.so
+    - /go/bin/gaiad
+
