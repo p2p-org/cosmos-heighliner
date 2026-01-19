@@ -2,9 +2,15 @@
   github-organization: haqq-network
   github-repo: haqq
   dockerfile: cosmos
-  build-target: make install
-  build-env:
-    - LEDGER_ENABLED=false
-    - BUILD_TAGS=muslc
+  #build-target: make install
+  #build-env:
+  #  - LEDGER_ENABLED=false
+  #  - BUILD_TAGS=muslc
+  # due to v1.9.2 source code not publicly available, we need to download the binary and disable build temporarily
+  pre-build: |
+    wget https://github.com/haqq-network/haqq/releases/download/v1.9.2/haqq-priv_1.9.2_linux_amd64.tar.gz
+    tar -xzf haqq-priv_1.9.2_linux_amd64.tar.gz
+    mv bin/haqqd /go/bin/haqqd
+    chmod +x /go/bin/haqqd
   binaries:
     - /go/bin/haqqd
