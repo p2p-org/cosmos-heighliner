@@ -3,10 +3,10 @@
   github-organization: cosmos
   github-repo: gaia
   dockerfile: cosmos
-  build-target: make install
-  # pre-build: |
-  #  wget https://github.com/cosmos/gaia/releases/download/v25.3.1/gaiad-v25.3.1-linux-amd64 -O /go/bin/gaiad
-  #  chmod +x /go/bin/gaiad
+  # build-target: make install
+  pre-build: |
+    wget https://github.com/cosmos/gaia/releases/download/v26.0.0-rc0/gaiad-v26.0.0-rc0-linux-amd64 -O /go/bin/gaiad
+    chmod +x /go/bin/gaiad
   build-env:
     - LEDGER_ENABLED=false
     - BUILD_TAGS=muslc
