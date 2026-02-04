@@ -32,6 +32,7 @@ ARG LIBRARIES
 ENV LIBRARIES_ENV ${LIBRARIES}
 RUN bash -c 'LIBRARIES_ARR=($LIBRARIES_ENV); for LIBRARY in "${LIBRARIES_ARR[@]}"; do cp $LIBRARY /root/lib/; done'
 
+#some chains require GLIBC 2.38+
 FROM debian:trixie
 
 LABEL org.opencontainers.image.source="https://github.com/p2p-org/cosmos-heighliner"
