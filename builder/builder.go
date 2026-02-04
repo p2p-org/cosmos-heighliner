@@ -469,11 +469,6 @@ func (h *HeighlinerBuilder) buildChainNodeDockerImage(
 		vendor = "true"
 	}
 
-	finalImage := chainConfig.Build.FinalImage
-	if finalImage == "" {
-		finalImage = "debian:bookworm"
-	}
-
 	buildArgs := map[string]string{
 		"VERSION":             chainConfig.Ref,
 		"BASE_VERSION":        gv.Image,
@@ -489,7 +484,7 @@ func (h *HeighlinerBuilder) buildChainNodeDockerImage(
 		"TARGET_LIBRARIES":    targetLibraries,
 		"DIRECTORIES":         directories,
 		"PRE_BUILD":           chainConfig.Build.PreBuild,
-		"FINAL_IMAGE":         finalImage,
+		"FINAL_IMAGE":         chainConfig.Build.FinalImage,
 		"BUILD_ENV":           buildEnv,
 		"BUILD_TAGS":          buildTagsEnvVar,
 		"BUILD_DIR":           chainConfig.Build.BuildDir,
