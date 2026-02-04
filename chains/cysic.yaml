@@ -1,7 +1,9 @@
+# Cysic Network - Requires GLIBC 2.38+, using Debian Trixie
 - name: cysic
   github-organization: cysic-labs
   github-repo: validator
   dockerfile: none
+  final-image: debian:trixie
   pre-build: |
     set -eux
     wget https://github.com/cysic-labs/validator/raw/main/lib/cysicmintd-linux-20251204.zip
