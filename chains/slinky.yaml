@@ -1,0 +1,8 @@
+# Slinky
+- name: slinky
+  github-organization: neutron-org
+  github-repo: connect
+  dockerfile: go-build
+  build-target: make install
+  binaries:
+    - /go/bin/slinky
