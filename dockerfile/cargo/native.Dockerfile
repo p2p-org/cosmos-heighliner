@@ -259,6 +259,6 @@ COPY --from=alpine-3 /etc/ssl/cert.pem /etc/ssl/cert.pem
 # Install heighliner user
 COPY --from=infra-toolkit /etc/passwd /etc/passwd
 COPY --from=infra-toolkit --chown=1111:1111 /home/p2p /home/p2p
-
+RUN mkdir /tmp 
 WORKDIR /home/p2p
 # USER p2p
