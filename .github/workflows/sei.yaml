@@ -1,11 +1,11 @@
 # Sei workflow usage:
 # - Release build tag:
-#     seid-v6.3.2
+#     sei-v6.3.2
 #
 # - Commit-pinned build tag (with branch metadata):
-#     seid-ref-<url-encoded-branch>--<commit>
+#     sei-ref-<url-encoded-branch>--<commit>
 #   Example:
-#     seid-ref-release%2F6.3--abc1234def56
+#     sei-ref-release%2F6.3--abc1234def56
 #   Commit should be at least 12 hex chars (up to full 40-char SHA).
 #
 # - URL-encode a branch name:
@@ -22,8 +22,8 @@ name: Build and Push sei Docker Image
 on:
   push:
     tags:
-      - "seid-v*"
-      - "seid-ref-*"
+      - "sei-v*"
+      - "sei-ref-*"
   workflow_dispatch:
     inputs:
       sei_ref:
@@ -87,19 +87,19 @@ jobs:
           else
             TAG_NAME="${GITHUB_REF#refs/tags/}"
 
-            if [[ "${TAG_NAME}" =~ ^seid-v(.+)$ ]]; then
+            if [[ "${TAG_NAME}" =~ ^sei-v(.+)$ ]]; then
               SEI_GIT_REF="v${BASH_REMATCH[1]}"
               BRANCH_META="release"
               SOURCE_KIND="release"
-            elif [[ "${TAG_NAME}" =~ ^seid-ref-(.+)--([0-9a-fA-F]{12,40})$ ]]; then
+            elif [[ "${TAG_NAME}" =~ ^sei-ref-(.+)--([0-9a-fA-F]{12,40})$ ]]; then
               BRANCH_ENCODED="${BASH_REMATCH[1]}"
               SEI_GIT_REF="${BASH_REMATCH[2]}"
               BRANCH_META="$(python3 -c 'import sys, urllib.parse; print(urllib.parse.unquote(sys.argv[1]))' "${BRANCH_ENCODED}")"
               SOURCE_KIND="ref"
             else
               echo "Unsupported tag '${TAG_NAME}'." >&2
-              echo "Expected 'seid-v<version>' or 'seid-ref-<url-encoded-branch>--<commit>'." >&2
-              echo "For seid-ref tags, commit must be 12-40 hex characters." >&2
+              echo "Expected 'sei-v<version>' or 'sei-ref-<url-encoded-branch>--<commit>'." >&2
+              echo "For sei-ref tags, commit must be 12-40 hex characters." >&2
               exit 1
             fi
           fi
