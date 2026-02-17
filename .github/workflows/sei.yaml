@@ -1,0 +1,141 @@
+# Sei workflow usage:
+# - Release build tag:
+#     seid-v6.3.2
+#
+# - Commit-pinned build tag (with branch metadata):
+#     seid-ref-<url-encoded-branch>--<commit>
+#   Example:
+#     seid-ref-release%2F6.3--abc1234def56
+#   Commit should be at least 12 hex chars (up to full 40-char SHA).
+#
+# - URL-encode a branch name:
+#     python3 -c 'import urllib.parse,sys; print(urllib.parse.quote(sys.argv[1], safe=""))' "release/6.3"
+#   Optional (if jq is installed):
+#     printf '%s' "release/6.3" | jq -sRr @uri
+#
+# - Manual run (workflow_dispatch):
+#   Set `sei_ref` to any valid Sei ref (tag/branch/commit). Default is v6.3.2.
+#   `sei_branch` is optional metadata for commit-based builds.
+
+name: Build and Push sei Docker Image
+
+on:
+  push:
+    tags:
+      - "seid-v*"
+      - "seid-ref-*"
+  workflow_dispatch:
+    inputs:
+      sei_ref:
+        description: "Sei ref to build (tag, branch, or commit)"
+        required: false
+        default: "v6.3.2"
+      sei_branch:
+        description: "Optional branch metadata (for commit builds)"
+        required: false
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+  INFRA_TOOLKIT: v0.1.6
+
+jobs:
+  build-and-push-sei:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Set up Go
+        uses: actions/setup-go@v3
+        with:
+          go-version: '1.24.1'
+
+      - name: Log in to the Container registry
+        uses: docker/login-action@v1
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build Heighliner binary
+        run: |
+          go build -o heighliner
+
+      - name: Resolve Sei ref and image tag
+        id: resolve_ref
+        run: |
+          set -euo pipefail
+
+          DEFAULT_SEI_REF="v6.3.2"
+          SOURCE_KIND=""
+          SEI_GIT_REF=""
+          IMAGE_VERSION=""
+          BRANCH_META=""
+
+          if [[ "${GITHUB_EVENT_NAME}" == "workflow_dispatch" ]]; then
+            SEI_GIT_REF="${{ github.event.inputs.sei_ref }}"
+            BRANCH_META="${{ github.event.inputs.sei_branch }}"
+            if [[ -z "${SEI_GIT_REF}" ]]; then
+              SEI_GIT_REF="${DEFAULT_SEI_REF}"
+            fi
+            SOURCE_KIND="manual"
+          else
+            TAG_NAME="${GITHUB_REF#refs/tags/}"
+
+            if [[ "${TAG_NAME}" =~ ^seid-v(.+)$ ]]; then
+              SEI_GIT_REF="v${BASH_REMATCH[1]}"
+              BRANCH_META="release"
+              SOURCE_KIND="release"
+            elif [[ "${TAG_NAME}" =~ ^seid-ref-(.+)--([0-9a-fA-F]{12,40})$ ]]; then
+              BRANCH_ENCODED="${BASH_REMATCH[1]}"
+              SEI_GIT_REF="${BASH_REMATCH[2]}"
+              BRANCH_META="$(python3 -c 'import sys, urllib.parse; print(urllib.parse.unquote(sys.argv[1]))' "${BRANCH_ENCODED}")"
+              SOURCE_KIND="ref"
+            else
+              echo "Unsupported tag '${TAG_NAME}'." >&2
+              echo "Expected 'seid-v<version>' or 'seid-ref-<url-encoded-branch>--<commit>'." >&2
+              echo "For seid-ref tags, commit must be 12-40 hex characters." >&2
+              exit 1
+            fi
+          fi
+
+          SAFE_REF="$(echo "${SEI_GIT_REF}" | tr '[:upper:]' '[:lower:]' | sed -E 's/[^a-z0-9._-]+/-/g; s/^-+//; s/-+$//; s/-+/-/g')"
+          if [[ -z "${SAFE_REF}" ]]; then
+            echo "Unable to create safe image tag from SEI_GIT_REF='${SEI_GIT_REF}'." >&2
+            exit 1
+          fi
+
+          if [[ "${SOURCE_KIND}" == "ref" ]]; then
+            IMAGE_VERSION="ref-${SAFE_REF}"
+          else
+            IMAGE_VERSION="${SAFE_REF}"
+          fi
+
+          echo "SEI_GIT_REF=${SEI_GIT_REF}" >> "$GITHUB_ENV"
+          echo "IMAGE_VERSION=${IMAGE_VERSION}" >> "$GITHUB_ENV"
+          echo "SOURCE_KIND=${SOURCE_KIND}" >> "$GITHUB_ENV"
+          echo "SEI_BRANCH_META=${BRANCH_META}" >> "$GITHUB_ENV"
+          echo "sei_git_ref=${SEI_GIT_REF}" >> "$GITHUB_OUTPUT"
+          echo "image_version=${IMAGE_VERSION}" >> "$GITHUB_OUTPUT"
+          echo "source_kind=${SOURCE_KIND}" >> "$GITHUB_OUTPUT"
+          echo "sei_branch_meta=${BRANCH_META}" >> "$GITHUB_OUTPUT"
+          echo "Resolved SEI_GIT_REF=${SEI_GIT_REF}, IMAGE_VERSION=${IMAGE_VERSION}, SOURCE_KIND=${SOURCE_KIND}, SEI_BRANCH_META=${BRANCH_META}"
+
+      - name: Manually pull the base Docker image
+        run: |
+          echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+          docker pull ghcr.io/p2p-org/cosmos-heighliner:infra-toolkit-${{ env.INFRA_TOOLKIT }}
+
+      - name: Build and push sei Docker image
+        run: |
+          ./heighliner build -c sei --git-ref ${{ steps.resolve_ref.outputs.sei_git_ref }}
+
+      - name: Tag and push Docker image
+        run: |
+          docker tag sei:${{ steps.resolve_ref.outputs.sei_git_ref }} ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:sei-${{ steps.resolve_ref.outputs.image_version }}
+          docker push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:sei-${{ steps.resolve_ref.outputs.image_version }}
