@@ -3,8 +3,7 @@
   pre-build: |
     apt update
     apt install unzip
-    #    wget https://github.com/InjectiveLabs/injective-chain-releases/releases/download/$VERSION/linux-amd64.zip
-    wget https://github.com/InjectiveLabs/injective-chain-releases/releases/download/$VERSION/linux-amd64.zip
+    wget https://github.com/InjectiveFoundation/injective-core/releases/download/$VERSION/linux-amd64.zip
     unzip linux-amd64.zip
     mv injectived peggo /usr/bin
     mv libwasmvm.x86_64.so /usr/lib
