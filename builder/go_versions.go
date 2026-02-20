@@ -33,7 +33,7 @@ var (
 	Go121Image = GolangAlpineImage(Go121Version, LatestAlpineImageVersion)
 	Go122Image = GolangAlpineImage(Go122Version, LatestAlpineImageVersion)
 	Go123Image = GolangAlpineImage(Go123Version, LatestAlpineImageVersion)
-	Go124Image = GolangAlpineImage(Go124Version, LatestAlpineImageVersion)
+	Go124Image = GolangAlpineImage(Go124Version, "3.21")
 	Go125Image = GolangAlpineImage(Go125Version, LatestAlpineImageVersion)
 	// ADD NEW GO VERSION [3] - update GoDefaultVersion and GoDefaultImage to latest
 	GoDefaultVersion = Go125Version
