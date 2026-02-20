@@ -20,6 +20,18 @@ var CosmosLocal []byte
 //go:embed cosmos/localcross.Dockerfile
 var CosmosLocalCross []byte
 
+//go:embed geth/Dockerfile
+var Geth []byte
+
+//go:embed geth/native.Dockerfile
+var GethNative []byte
+
+//go:embed geth/local.Dockerfile
+var GethLocal []byte
+
+//go:embed geth/localcross.Dockerfile
+var GethLocalCross []byte
+
 //go:embed imported/Dockerfile
 var Imported []byte
 

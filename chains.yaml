@@ -1250,6 +1250,23 @@
   build-env:
     - BUILD_TAGS=muslc
 
+# Story
+- name: story
+  github-organization: piplabs
+  github-repo: story
+  dockerfile: cosmos
+  build-target: go build -o story ./client
+  binaries:
+    - story
+
+- name: story-geth
+  github-organization: piplabs
+  github-repo: story-geth
+  dockerfile: geth
+  build-target: go run build/ci.go install -static ./cmd/geth
+  binaries:
+    - build/bin/geth
+
 # Stride
 - name: stride
   github-organization: Stride-Labs

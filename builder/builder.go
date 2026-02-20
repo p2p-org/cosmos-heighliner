@@ -141,6 +141,19 @@ func rawDockerfile(
 			return dockerfileEmbeddedOrLocal("cosmos/Dockerfile", dockerfile.Cosmos)
 		}
 		return dockerfileEmbeddedOrLocal("cosmos/native.Dockerfile", dockerfile.CosmosNative)
+
+	case DockerfileTypeGeth:
+		if local {
+			if useBuildKit {
+				return dockerfileEmbeddedOrLocal("geth/localcross.Dockerfile", dockerfile.GethLocalCross)
+			}
+			return dockerfile.GethLocal
+		}
+		if useBuildKit {
+			return dockerfileEmbeddedOrLocal("geth/Dockerfile", dockerfile.Geth)
+		}
+		return dockerfileEmbeddedOrLocal("geth/native.Dockerfile", dockerfile.GethNative)
+
 	case DockerfileTypeAvalanche:
 		if useBuildKit {
 			return dockerfileEmbeddedOrLocal("avalanche/Dockerfile", dockerfile.Avalanche)
@@ -232,9 +245,8 @@ func getModFile(
 
 	goMod, err := modfile.Parse("go.mod", goModBz, nil)
 	if err != nil {
-		// Only apply the fallback parsing for go-build dockerfile type
-		// to avoid affecting existing builds
-		if dockerfileType == DockerfileTypeGoBuild {
+		// Apply fallback parsing for go-build, cosmos, and geth dockerfile types
+		if dockerfileType == DockerfileTypeGoBuild || dockerfileType == DockerfileTypeCosmos || dockerfileType == DockerfileTypeGeth {
 			// If parsing fails (e.g., due to unknown block types like "tool"),
 			// try to extract just the Go version manually
 			goVersion := extractGoVersionFromModFile(goModBz)
