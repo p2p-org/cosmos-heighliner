@@ -1,10 +1,28 @@
 ARG BASE_VERSION
-FROM golang:${BASE_VERSION} AS build-env
+FROM --platform=$BUILDPLATFORM golang:${BASE_VERSION} AS build-env
 
 RUN apk add --update --no-cache binutils binutils-gold curl make git libc-dev bash gcc linux-headers eudev-dev git-lfs ncurses-dev
 
 ARG TARGETARCH
 ARG BUILDARCH
+
+RUN if [ "${TARGETARCH}" = "arm64" ] && [ "${BUILDARCH}" != "arm64" ]; then\
+        wget -c https://musl.cc/aarch64-linux-musl-cross.tgz -O - | tar -xzvv --strip-components 1 -C /usr;\
+    elif [ "${TARGETARCH}" = "amd64" ] && [ "${BUILDARCH}" != "amd64" ]; then\
+        wget -c https://musl.cc/x86_64-linux-musl-cross.tgz -O - | tar -xzvv --strip-components 1 -C /usr;\
+    fi
+
+ARG CLONE_KEY
+
+RUN if [ ! -z "${CLONE_KEY}" ]; then\
+        mkdir -p ~/.ssh;\
+        echo "${CLONE_KEY}" | base64 -d > ~/.ssh/id_ed25519;\
+        chmod 600 ~/.ssh/id_ed25519;\
+        apk add openssh;\
+        git config --global --add url."ssh://git@github.com/".insteadOf "https://github.com/";\
+        ssh-keyscan github.com >> ~/.ssh/known_hosts;\
+    fi
+
 ARG GITHUB_ORGANIZATION
 ARG REPO_HOST
 
@@ -34,18 +52,16 @@ ARG BUILD_DIR
 
 RUN set -eux; \
     LIBDIR=/lib; \
-    TARGETARCH=${TARGETARCH:-amd64}; \
-    BUILDARCH=${BUILDARCH:-amd64}; \
-    if [ "$TARGETARCH" = "arm64" ]; then \
+    if [ "${TARGETARCH}" = "arm64" ]; then \
       export ARCH=aarch64; \
-      if [ "$BUILDARCH" != "arm64" ]; then \
+      if [ "${BUILDARCH}" != "arm64" ]; then \
         LIBDIR=/usr/aarch64-linux-musl/lib; \
         mkdir -p $LIBDIR; \
         export CC=aarch64-linux-musl-gcc CXX=aarch64-linux-musl-g++; \
       fi; \
-    elif [ "$TARGETARCH" = "amd64" ]; then \
+    elif [ "${TARGETARCH}" = "amd64" ]; then \
       export ARCH=x86_64; \
-      if [ "$BUILDARCH" != "amd64" ]; then \
+      if [ "${BUILDARCH}" != "amd64" ]; then \
         LIBDIR=/usr/x86_64-linux-musl/lib; \
         mkdir -p $LIBDIR; \
         export CC=x86_64-linux-musl-gcc CXX=x86_64-linux-musl-g++; \
@@ -115,35 +131,76 @@ RUN bash -c 'set -eux; \
     ((i = i + 1)); \
   done'
 
-# Build final image
-FROM alpine:latest
+# Use minimal busybox from infra-toolkit image for final scratch image
+FROM ghcr.io/p2p-org/cosmos-heighliner:infra-toolkit-v0.1.6 AS infra-toolkit
+
+# Use ln and rm from full featured busybox for assembling final image
+FROM busybox:1.34.1-musl AS busybox-full
+
+# Build final image from scratch
+FROM alpine:3
 
 LABEL org.opencontainers.image.source="https://github.com/p2p-org/cosmos-heighliner"
 
-RUN apk add --no-cache ca-certificates jq bash
-
 WORKDIR /bin
+
+# Install ln (for making hard links), rm (for cleanup), mv, mkdir, vi and dirname from full busybox image (will be deleted, only needed for image assembly)
+COPY --from=busybox-full /bin/ln /bin/mv /bin/rm /bin/mkdir /bin/vi /bin/dirname ./
+
+# Install minimal busybox image as shell binary (will create hardlinks for the rest of the binaries to this data)
+COPY --from=infra-toolkit /busybox/busybox /bin/sh
+
+# Install jq
+COPY --from=infra-toolkit /usr/local/bin/jq /bin/
+
+# Add hard links for read-only utils
+# Will then only have one copy of the busybox minimal binary file with all utils pointing to the same underlying inode
+RUN for b in \
+  cat \
+  date \
+  df \
+  du \
+  env \
+  grep \
+  head \
+  less \
+  ls \
+  md5sum \
+  pwd \
+  sha1sum \
+  sha256sum \
+  sha3sum \
+  sha512sum \
+  sleep \
+  stty \
+  tail \
+  tar \
+  tee \
+  tr \
+  watch \
+  which \
+  ; do ln sh $b; done
 
 # Copy over absolute path directories
 COPY --from=build-env /root/dir_abs /root/dir_abs
 COPY --from=build-env /root/dir_abs.list /root/dir_abs.list
 
 # Move absolute path directories to their absolute locations.
-RUN sh -c 'i=0; [ -f /root/dir_abs.list ] && while read DIR; do \
-      echo "$i: $DIR"; \
-      PLACEDIR="$(dirname "$DIR")"; \
-      mkdir -p "$PLACEDIR"; \
-      mv /root/dir_abs/$i $DIR; \
-      i=$((i+1)); \
-    done < /root/dir_abs.list || true'
+RUN sh -c 'i=0; while read DIR; do\
+      echo "$i: $DIR";\
+      PLACEDIR="$(dirname "$DIR")";\
+      mkdir -p "$PLACEDIR";\
+      mv /root/dir_abs/$i $DIR;\
+      i=$((i+1));\
+    done < /root/dir_abs.list'
+
+#  Remove write utils
+RUN rm ln dirname
 
 # Install chain binaries
 COPY --from=build-env /root/bin /bin
 
 # Install libraries
-COPY --from=build-env /root/lib /usr/lib
+COPY --from=build-env /root/lib /lib
 
-RUN addgroup --gid 1111 -S p2p && adduser --uid 1111 -S p2p -G p2p
 WORKDIR /home/p2p
-RUN chown -R p2p:p2p /home/p2p
-USER p2p

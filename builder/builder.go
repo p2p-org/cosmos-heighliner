@@ -143,6 +143,12 @@ func rawDockerfile(
 		return dockerfileEmbeddedOrLocal("cosmos/native.Dockerfile", dockerfile.CosmosNative)
 
 	case DockerfileTypeGeth:
+		if local {
+			if useBuildKit {
+				return dockerfileEmbeddedOrLocal("geth/localcross.Dockerfile", dockerfile.GethLocalCross)
+			}
+			return dockerfile.GethLocal
+		}
 		if useBuildKit {
 			return dockerfileEmbeddedOrLocal("geth/Dockerfile", dockerfile.Geth)
 		}

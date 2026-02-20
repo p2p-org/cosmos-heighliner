@@ -1,30 +1,61 @@
 ARG BASE_VERSION
-FROM golang:${BASE_VERSION} AS build-env
+FROM golang:${BASE_VERSION} AS init-env
 
-RUN apk add --update --no-cache binutils binutils-gold curl make git libc-dev bash gcc linux-headers eudev-dev git-lfs ncurses-dev
+
+RUN apk update && apk upgrade --no-cache && \
+    apk add --update --no-cache busybox && \
+    apk add --update --no-cache curl make git libc-dev bash gcc linux-headers eudev-dev ncurses-dev binutils binutils-gold       git-lfs 
 
 ARG TARGETARCH
 ARG BUILDARCH
 ARG GITHUB_ORGANIZATION
 ARG REPO_HOST
 
-WORKDIR /go/src/${REPO_HOST}/${GITHUB_ORGANIZATION}
-
 ARG GITHUB_REPO
 ARG VERSION
 ARG BUILD_TIMESTAMP
 ARG SKIP_LFS
 
-# Conditionally skip LFS smudging during clone if SKIP_LFS is set.
-RUN if [ ! -z "${SKIP_LFS}" ]; then \
-      GIT_LFS_SKIP_SMUDGE=1 git clone -b ${VERSION} --single-branch https://${REPO_HOST}/${GITHUB_ORGANIZATION}/${GITHUB_REPO}.git --recursive; \
-    else \
-      git clone -b ${VERSION} --single-branch https://${REPO_HOST}/${GITHUB_ORGANIZATION}/${GITHUB_REPO}.git --recursive \
-      && cd ${GITHUB_REPO} \
-      && git lfs install && git lfs pull; \
-    fi
-
 WORKDIR /go/src/${REPO_HOST}/${GITHUB_ORGANIZATION}/${GITHUB_REPO}
+
+ARG BUILD_DIR
+
+ADD ${BUILD_DIR}/go.mod ${BUILD_DIR}/go.sum ./
+
+ARG CLONE_KEY
+
+RUN if [ ! -z "${CLONE_KEY}" ]; then\
+  mkdir -p ~/.ssh;\
+  echo "${CLONE_KEY}" | base64 -d > ~/.ssh/id_ed25519;\
+  chmod 600 ~/.ssh/id_ed25519;\
+  apk add openssh;\
+  git config --global --add url."ssh://git@github.com/".insteadOf "https://github.com/";\
+  ssh-keyscan github.com >> ~/.ssh/known_hosts;\
+  fi
+
+
+ARG VENDOR
+
+# Download go mod dependencies, if there is no custom build directory.
+# Skips if a go related "vendor" folder is detected.
+# Note: a custom build dir indicates a monorepo with potential dependencies we can't anticipate atm
+RUN set -eux; \
+    if [[ "${BUILD_DIR}" == "." && "${VENDOR}}" == "false" ]]; then\
+        go mod download;\
+    fi;
+
+# Use minimal busybox from infra-toolkit image for final scratch image
+FROM ghcr.io/p2p-org/cosmos-heighliner:infra-toolkit-v0.1.6 AS infra-toolkit
+RUN addgroup --gid 1111 -S p2p && adduser --uid 1111 -S p2p -G p2p
+
+# Use ln and rm from full featured busybox for assembling final image
+FROM busybox:1.34.1-musl AS busybox-full
+
+# Use alpine to source the latest CA certificates
+FROM alpine:3 as alpine-3
+
+# Install chain binary
+FROM init-env AS build-env
 
 ARG BUILD_TARGET
 ARG BUILD_ENV
@@ -32,26 +63,12 @@ ARG BUILD_TAGS
 ARG PRE_BUILD
 ARG BUILD_DIR
 
+# This Dockerfile is the same as native.Dockerfile except that the chain code is sourced from the
+# current working directory instead of a remote git repository.
+ADD . .
+
 RUN set -eux; \
-    LIBDIR=/lib; \
-    TARGETARCH=${TARGETARCH:-amd64}; \
-    BUILDARCH=${BUILDARCH:-amd64}; \
-    if [ "$TARGETARCH" = "arm64" ]; then \
-      export ARCH=aarch64; \
-      if [ "$BUILDARCH" != "arm64" ]; then \
-        LIBDIR=/usr/aarch64-linux-musl/lib; \
-        mkdir -p $LIBDIR; \
-        export CC=aarch64-linux-musl-gcc CXX=aarch64-linux-musl-g++; \
-      fi; \
-    elif [ "$TARGETARCH" = "amd64" ]; then \
-      export ARCH=x86_64; \
-      if [ "$BUILDARCH" != "amd64" ]; then \
-        LIBDIR=/usr/x86_64-linux-musl/lib; \
-        mkdir -p $LIBDIR; \
-        export CC=x86_64-linux-musl-gcc CXX=x86_64-linux-musl-g++; \
-      fi; \
-    fi; \
-    export GOOS=linux GOARCH=$TARGETARCH CGO_ENABLED=1 LDFLAGS='-linkmode external -extldflags "-static"'; \
+    export CGO_ENABLED=1 LDFLAGS='-linkmode external -extldflags "-static"'; \
     if [ ! -z "$PRE_BUILD" ]; then sh -c "${PRE_BUILD}"; fi; \
     if [ ! -z "$BUILD_TARGET" ]; then \
       if [ ! -z "$BUILD_ENV" ]; then export ${BUILD_ENV}; fi; \
@@ -68,38 +85,38 @@ RUN mkdir /root/bin
 ARG RACE
 ARG BINARIES
 ENV BINARIES_ENV ${BINARIES}
-RUN bash -c 'set -eux; \
-  BINARIES_ARR=(); \
-  IFS=, read -ra BINARIES_ARR <<< "$BINARIES_ENV"; \
-  for BINARY in "${BINARIES_ARR[@]}"; do \
-    BINSPLIT=(); \
-    IFS=: read -ra BINSPLIT <<< "$BINARY"; \
-    BINPATH=${BINSPLIT[1]+"${BINSPLIT[1]}"}; \
-    BIN="$(eval "echo "${BINSPLIT[0]+"${BINSPLIT[0]}"}"")"; \
-    if [ ! -z "$RACE" ] && GOVERSIONOUT=$(go version -m $BIN); then \
-      if echo $GOVERSIONOUT | grep build | grep "-race=true"; then \
-        echo "Race detection is enabled in binary"; \
-      else \
-        echo "Race detection not enabled in binary!"; \
-        exit 1; \
-      fi; \
-    fi; \
-    if [ ! -z "$BINPATH" ]; then \
-      if [[ $BINPATH == *"/"* ]]; then \
-        mkdir -p "$(dirname "${BINPATH}")"; \
-        cp "$BIN" "${BINPATH}"; \
-      else \
-        cp "$BIN" "/root/bin/${BINPATH}"; \
-      fi; \
-    else \
-      cp "$BIN" /root/bin/; \
-    fi; \
+RUN bash -c 'set -eux;\
+  BINARIES_ARR=();\
+  IFS=, read -ra BINARIES_ARR <<< "$BINARIES_ENV";\
+  for BINARY in "${BINARIES_ARR[@]}"; do\
+    BINSPLIT=();\
+    IFS=: read -ra BINSPLIT <<< "$BINARY";\
+    BINPATH=${BINSPLIT[1]+"${BINSPLIT[1]}"};\
+    BIN="$(eval "echo "${BINSPLIT[0]+"${BINSPLIT[0]}"}"")";\
+    if [ ! -z "$RACE" ] && GOVERSIONOUT=$(go version -m $BIN); then\
+      if echo $GOVERSIONOUT | grep build | grep "-race=true"; then\
+        echo "Race detection is enabled in binary";\
+      else\
+        echo "Race detection not enabled in binary!";\
+        exit 1;\
+      fi;\
+    fi;\
+    if [ ! -z "$BINPATH" ]; then\
+      if [[ $BINPATH == *"/"* ]]; then\
+        mkdir -p "$(dirname "${BINPATH}")";\
+        cp "$BIN" "${BINPATH}";\
+      else\
+        cp "$BIN" "/root/bin/${BINPATH}";\
+      fi;\
+    else\
+      cp "$BIN" /root/bin/;\
+    fi;\
   done'
 
 RUN mkdir -p /root/lib
 ARG LIBRARIES
 ENV LIBRARIES_ENV ${LIBRARIES}
-RUN bash -c 'set -eux; \
+RUN bash -c 'set -eux;\
   LIBRARIES_ARR=($LIBRARIES_ENV); for LIBRARY in "${LIBRARIES_ARR[@]}"; do cp $LIBRARY /root/lib/; done'
 
 # Copy over directories
@@ -115,27 +132,54 @@ RUN bash -c 'set -eux; \
     ((i = i + 1)); \
   done'
 
-# Build final image
-FROM alpine:latest
+# Build final image from scratch
+FROM scratch
 
 LABEL org.opencontainers.image.source="https://github.com/p2p-org/cosmos-heighliner"
 
-RUN apk add --no-cache ca-certificates jq bash
+# Use minimal busybox from infra-toolkit image
+COPY --from=infra-toolkit /busybox/busybox /busybox/busybox
 
-WORKDIR /bin
+# Install ln (for making hard links) and rm (for cleanup) from full busybox image (will be deleted, only needed for image assembly)
+COPY --from=busybox-full /bin/ln /usr/bin/ln
+COPY --from=busybox-full /bin/rm /usr/bin/rm
+
+# Install jq
+COPY --from=infra-toolkit /usr/local/bin/jq /usr/local/bin/jq
+
+# Add hard links for read-only utils
+# Will then only have one copy of the busybox minimal binary file with all utils pointing to the same underlying inode
+RUN ln /busybox/busybox /busybox/sh && \
+    ln /busybox/busybox /busybox/cat && \
+    ln /busybox/busybox /busybox/less && \
+    ln /busybox/busybox /busybox/grep && \
+    ln /busybox/busybox /busybox/test && \
+    ln /busybox/busybox /busybox/sleep && \
+    ln /busybox/busybox /busybox/env
+
+# Remove write utils
+RUN rm /usr/bin/ln /usr/bin/rm
+
+# Install trusted CA certificates
+COPY --from=alpine-3 /etc/ssl/cert.pem /etc/ssl/cert.pem
+COPY --from=alpine-3 /etc/ssl/certs /etc/ssl/certs
+
+# Install p2p user
+COPY --from=infra-toolkit /etc/passwd /etc/passwd
+COPY --from=infra-toolkit --chown=1111:1111 /home/p2p /home/p2p
 
 # Copy over absolute path directories
 COPY --from=build-env /root/dir_abs /root/dir_abs
 COPY --from=build-env /root/dir_abs.list /root/dir_abs.list
 
 # Move absolute path directories to their absolute locations.
-RUN sh -c 'i=0; [ -f /root/dir_abs.list ] && while read DIR; do \
+RUN set -eux; i=0; [ -f /root/dir_abs.list ] && while read DIR; do \
       echo "$i: $DIR"; \
       PLACEDIR="$(dirname "$DIR")"; \
-      mkdir -p "$PLACEDIR"; \
-      mv /root/dir_abs/$i $DIR; \
+      /busybox/mkdir -p "$PLACEDIR"; \
+      /busybox/cp -r /root/dir_abs/$i $DIR; \
       i=$((i+1)); \
-    done < /root/dir_abs.list || true'
+    done < /root/dir_abs.list || true
 
 # Install chain binaries
 COPY --from=build-env /root/bin /bin
@@ -143,7 +187,5 @@ COPY --from=build-env /root/bin /bin
 # Install libraries
 COPY --from=build-env /root/lib /usr/lib
 
-RUN addgroup --gid 1111 -S p2p && adduser --uid 1111 -S p2p -G p2p
 WORKDIR /home/p2p
-RUN chown -R p2p:p2p /home/p2p
 USER p2p

@@ -1,7 +1,20 @@
 ARG BASE_VERSION
 FROM golang:${BASE_VERSION} AS build-env
 
-RUN apk add --update --no-cache binutils binutils-gold curl make git libc-dev bash gcc linux-headers eudev-dev git-lfs ncurses-dev
+RUN apk update && apk upgrade --no-cache && \
+    apk add --update --no-cache busybox && \
+    apk add --update --no-cache binutils binutils-gold curl make git libc-dev bash gcc linux-headers eudev-dev ncurses-dev git-lfs g++ libstdc++
+
+ARG CLONE_KEY
+
+RUN if [ ! -z "${CLONE_KEY}" ]; then\
+        mkdir -p ~/.ssh;\
+        echo "${CLONE_KEY}" | base64 -d > ~/.ssh/id_ed25519;\
+        chmod 600 ~/.ssh/id_ed25519;\
+        apk add openssh;\
+        git config --global --add url."ssh://git@github.com/".insteadOf "https://github.com/";\
+        ssh-keyscan github.com >> ~/.ssh/known_hosts;\
+    fi
 
 ARG TARGETARCH
 ARG BUILDARCH
@@ -32,35 +45,16 @@ ARG BUILD_TAGS
 ARG PRE_BUILD
 ARG BUILD_DIR
 
-RUN set -eux; \
-    LIBDIR=/lib; \
-    TARGETARCH=${TARGETARCH:-amd64}; \
-    BUILDARCH=${BUILDARCH:-amd64}; \
-    if [ "$TARGETARCH" = "arm64" ]; then \
-      export ARCH=aarch64; \
-      if [ "$BUILDARCH" != "arm64" ]; then \
-        LIBDIR=/usr/aarch64-linux-musl/lib; \
-        mkdir -p $LIBDIR; \
-        export CC=aarch64-linux-musl-gcc CXX=aarch64-linux-musl-g++; \
-      fi; \
-    elif [ "$TARGETARCH" = "amd64" ]; then \
-      export ARCH=x86_64; \
-      if [ "$BUILDARCH" != "amd64" ]; then \
-        LIBDIR=/usr/x86_64-linux-musl/lib; \
-        mkdir -p $LIBDIR; \
-        export CC=x86_64-linux-musl-gcc CXX=x86_64-linux-musl-g++; \
-      fi; \
-    fi; \
-    export GOOS=linux GOARCH=$TARGETARCH CGO_ENABLED=1 LDFLAGS='-linkmode external -extldflags "-static"'; \
-    if [ ! -z "$PRE_BUILD" ]; then sh -c "${PRE_BUILD}"; fi; \
-    if [ ! -z "$BUILD_TARGET" ]; then \
-      if [ ! -z "$BUILD_ENV" ]; then export ${BUILD_ENV}; fi; \
-      if [ ! -z "$BUILD_TAGS" ]; then export "${BUILD_TAGS}"; fi; \
-      if [ ! -z "$BUILD_DIR" ]; then cd "${BUILD_DIR}"; fi; \
-      sh -c "${BUILD_TARGET}"; \
+RUN set -eux;\
+    export ARCH=$(uname -m);\
+    export CGO_ENABLED=1 LDFLAGS='-linkmode external -extldflags "-static"';\
+    if [ ! -z "$PRE_BUILD" ]; then sh -c "${PRE_BUILD}"; fi;\
+    if [ ! -z "$BUILD_TARGET" ]; then\
+      if [ ! -z "$BUILD_ENV" ]; then export ${BUILD_ENV}; fi;\
+      if [ ! -z "$BUILD_TAGS" ]; then export "${BUILD_TAGS}"; fi;\
+      if [ ! -z "$BUILD_DIR" ]; then cd "${BUILD_DIR}"; fi;\
+      sh -c "${BUILD_TARGET}";\
     fi
-
-RUN if [ -d "/go/bin/linux_${TARGETARCH}" ]; then mv /go/bin/linux_${TARGETARCH}/* /go/bin/; fi
 
 # Copy all binaries to /root/bin, for a single place to copy into final image.
 # If a colon (:) delimiter is present, binary will be renamed to the text after the delimiter.
