@@ -518,6 +518,12 @@ func (h *HeighlinerBuilder) buildChainNodeDockerImage(
 
 	push := buildCfg.ContainerRegistry != "" && !buildCfg.SkipPush
 
+	// When final-base is set (e.g. "glibc"), use that stage as the build target (for pre-built glibc binaries).
+	buildTarget := ""
+	if dockerfile == DockerfileTypeCosmos && chainConfig.Build.FinalBase != "" {
+		buildTarget = chainConfig.Build.FinalBase
+	}
+
 	if buildCfg.UseBuildKit {
 		buildKitOptions := docker.GetDefaultBuildKitOptions()
 		buildKitOptions.Address = buildCfg.BuildKitAddr
@@ -541,11 +547,11 @@ func (h *HeighlinerBuilder) buildChainNodeDockerImage(
 			buildKitOptions.Platform = buildCfg.Platform
 		}
 		buildKitOptions.NoCache = buildCfg.NoCache
-		if err := docker.BuildDockerImageWithBuildKit(ctx, reldir, imageTags, push, buildCfg.TarExportPath, buildArgs, buildKitOptions); err != nil {
+		if err := docker.BuildDockerImageWithBuildKit(ctx, reldir, imageTags, push, buildCfg.TarExportPath, buildArgs, buildKitOptions, buildTarget); err != nil {
 			return err
 		}
 	} else {
-		if err := docker.BuildDockerImage(ctx, dfilepath, imageTags, push, buildArgs, buildCfg.NoCache); err != nil {
+		if err := docker.BuildDockerImage(ctx, dfilepath, imageTags, push, buildArgs, buildCfg.NoCache, buildTarget); err != nil {
 			return err
 		}
 	}

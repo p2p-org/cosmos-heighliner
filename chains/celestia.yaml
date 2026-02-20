@@ -2,6 +2,8 @@
   github-organization: celestiaorg
   github-repo: celestia-app
   dockerfile: cosmos
+  # Pre-built release binary is linked against glibc 2.38+ (__isoc23_*); use glibc final stage instead of Alpine.
+  final-base: glibc
   pre-build: |
     wget https://github.com/celestiaorg/celestia-app/releases/download/v7.0.2-mocha/celestia-app_Linux_x86_64.tar.gz
     tar -xzf celestia-app_Linux_x86_64.tar.gz

@@ -147,8 +147,8 @@ FROM ghcr.io/p2p-org/cosmos-heighliner:infra-toolkit-v0.1.6 AS infra-toolkit
 # Use ln and rm from full featured busybox for assembling final image
 FROM busybox:1.34.1-musl AS busybox-full
 
-# Build final image from scratch
-FROM apline:3
+# Build final image from scratch (Alpine/musl - for binaries built in this image)
+FROM alpine:3
 
 LABEL org.opencontainers.image.source="https://github.com/p2p-org/cosmos-heighliner"
 
@@ -221,3 +221,30 @@ COPY --from=build-env /root/lib /lib
 
 WORKDIR /home/p2p
 # USER p2p
+
+# Optional target for pre-built glibc binaries (e.g. Celestia release binaries that need __isoc23_* from glibc 2.38+).
+# Use: docker build --target glibc ... or heighliner with final-base: glibc in chain config.
+# Single COPY from /root to avoid BuildKit multi-platform "layer does not exist" on separate dir_abs copies.
+FROM debian:trixie-slim AS glibc
+
+LABEL org.opencontainers.image.source="https://github.com/p2p-org/cosmos-heighliner"
+
+COPY --from=build-env /root /root
+
+RUN set -eux; \
+  cp -a /root/bin/. /bin/ 2>/dev/null || true; \
+  rm -rf /root/bin; \
+  if [ -d /root/lib ] && [ -n "$(ls -A /root/lib 2>/dev/null)" ]; then cp -a /root/lib/. /lib/; fi; \
+  rm -rf /root/lib; \
+  if [ -s /root/dir_abs.list ]; then \
+    i=0; while read -r DIR; do \
+      [ -z "$DIR" ] && continue; \
+      PLACEDIR="$(dirname "$DIR")"; \
+      mkdir -p "$PLACEDIR"; \
+      mv "/root/dir_abs/$i" "$DIR"; \
+      i=$((i+1)); \
+    done < /root/dir_abs.list; \
+  fi; \
+  rm -rf /root/dir_abs /root/dir_abs.list
+
+WORKDIR /home/p2p

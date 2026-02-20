@@ -31,6 +31,7 @@ type ChainNodeConfig struct {
 	Dockerfile         DockerfileType `yaml:"dockerfile"`
 	BuildTarget        string         `yaml:"build-target"`
 	FinalImage         string         `yaml:"final-image"`
+	FinalBase          string         `yaml:"final-base"` // e.g. "glibc" for pre-built glibc binaries (uses debian final stage)
 	BuildDir           string         `yaml:"build-dir"`
 	Binaries           []string       `yaml:"binaries"`
 	Libraries          []string       `yaml:"libraries"`

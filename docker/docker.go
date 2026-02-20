@@ -30,7 +30,7 @@ type DockerImageBuildLog struct {
 	ErrorDetail *DockerImageBuildErrorDetail `json:"errorDetail"`
 }
 
-func BuildDockerImage(ctx context.Context, dockerfile string, tags []string, push bool, args map[string]string, noCache bool) error {
+func BuildDockerImage(ctx context.Context, dockerfile string, tags []string, push bool, args map[string]string, noCache bool, target string) error {
 	dockerClient, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
 		return err
@@ -50,6 +50,9 @@ func BuildDockerImage(ctx context.Context, dockerfile string, tags []string, pus
 		NetworkMode: "host",
 		Remove:      true,
 		BuildArgs:   buildArgs,
+	}
+	if target != "" {
+		opts.Target = target
 	}
 
 	tar, err := archive.TarWithOptions("./", &archive.TarOptions{})

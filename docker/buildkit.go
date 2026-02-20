@@ -60,6 +60,7 @@ func BuildDockerImageWithBuildKit(
 	tarExport string,
 	args map[string]string,
 	buildKitOptions BuildKitOptions,
+	target string,
 ) error {
 	c, err := client.New(ctx, buildKitOptions.Address)
 	if err != nil {
@@ -107,6 +108,9 @@ func BuildDockerImageWithBuildKit(
 
 	opts := map[string]string{
 		"platform": buildKitOptions.Platform,
+	}
+	if target != "" {
+		opts["target"] = target
 	}
 	for arg, value := range args {
 		opts[fmt.Sprintf("build-arg:%s", arg)] = value
