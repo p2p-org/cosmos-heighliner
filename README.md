@@ -122,23 +122,23 @@ heighliner will fetch the last 3 osmosis release tags from github, build docker 
 ````bash
 # Local build
 go build -o heighliner
-# 0G Galileo Testnet
+# 0G Galileo Testnet - both binaries from same release
 ./heighliner build -c 0g-galileo --git-ref v3.0.4 --go-version 1.23
 ./heighliner build -c 0g-galileo-geth --git-ref v3.0.4 --go-version 1.23
 
-# 0G Aristotle Mainnet  
-./heighliner build -c 0g-aristotle --git-ref 1.0.4 --go-version 1.23
-./heighliner build -c 0g-aristotle-geth --git-ref 1.0.4 --go-version 1.23
+# 0G Aristotle Mainnet - both binaries from same release
+./heighliner build -c 0g-aristotle --git-ref v1.0.4 --go-version 1.23
+./heighliner build -c 0g-aristotle-geth --git-ref v1.0.4 --go-version 1.23
 ````
 
 ````bash
 #remote build
-# Galileo "mainnet"
+# Galileo "testnet" - both binaries extracted from galileo-v3.0.4.tar.gz
 git tag 0g-galileo-v3.0.4
-git tag 0g-galileo-geth-v0.3.4
-# Aristotle "mainnet"
-git tag 0g-aristotle-3.0.4
-git tag 0g-aristotle-geth-0.3.4
+git tag 0g-galileo-geth-v3.0.4
+# Aristotle "mainnet" - both binaries extracted from aristotle-v1.0.4.tar.gz
+git tag 0g-aristotle-v1.0.4
+git tag 0g-aristotle-geth-v1.0.4
 git push origin <tag-name>
 ````
 

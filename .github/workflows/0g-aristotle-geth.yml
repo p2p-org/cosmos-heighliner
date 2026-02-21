@@ -3,7 +3,7 @@ name: Build and Push 0g-aristotle-geth Docker Image
 on:
   push:
     tags:
-      - "0g-aristotle-geth-[0-9]+.[0-9]+.[0-9]+*"
+      - "0g-aristotle-geth-v[0-9]+.[0-9]+.[0-9]+*"
   workflow_dispatch:
 
 env:
