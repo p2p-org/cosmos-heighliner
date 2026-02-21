@@ -15,7 +15,7 @@ const (
 	Go121Version = "1.21.13"
 	Go122Version = "1.22.7"
 	Go123Version = "1.23.12"
-	Go124Version = "1.24.1"
+	Go124Version = "1.24.13"
 	Go125Version = "1.25.7"
 	// ADD NEW GO VERSION [1] - latest patch release for each major/minor
 
@@ -33,7 +33,7 @@ var (
 	Go121Image = GolangAlpineImage(Go121Version, LatestAlpineImageVersion)
 	Go122Image = GolangAlpineImage(Go122Version, LatestAlpineImageVersion)
 	Go123Image = GolangAlpineImage(Go123Version, LatestAlpineImageVersion)
-	Go124Image = GolangAlpineImage(Go124Version, "3.21")
+	Go124Image = GolangAlpineImage(Go124Version, LatestAlpineImageVersion)
 	Go125Image = GolangAlpineImage(Go125Version, LatestAlpineImageVersion)
 	// ADD NEW GO VERSION [3] - update GoDefaultVersion and GoDefaultImage to latest
 	GoDefaultVersion = Go125Version

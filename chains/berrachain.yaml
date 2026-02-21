@@ -1,0 +1,32 @@
+# Berachain bArtio Testnet (Chain ID 80094)
+# Consensus layer: BeaconKit (Cosmos SDK-based with CometBFT)
+# Execution layer: Bera-Reth (Reth fork)
+# Docs: https://docs.berachain.com/
+
+- name: beacond
+  github-organization: berachain
+  github-repo: beacon-kit
+  dockerfile: cosmos
+  platforms:
+    - linux/amd64
+    # - linux/arm64  # Uncomment if ARM64 support is needed
+  pre-build: |
+    # Downgrade Go version from 1.25.7 to 1.24.13 for Docker Hub compatibility
+    # Remove this if Go 1.25 becomes available in heighliner
+    sed -i 's/go 1.25.7/go 1.24.13/g' go.mod || true
+    sed -i 's/go 1.25/go 1.24/g' go.mod || true
+  build-target: make build
+  binaries:
+    - build/bin/beacond
+
+- name: bera-reth
+  github-organization: berachain
+  github-repo: bera-reth
+  dockerfile: reth
+  platforms:
+    - linux/amd64
+    # - linux/arm64  # Uncomment if ARM64 support is needed
+  build-target: |
+    cargo build --release --bin bera-reth
+  binaries:
+    - ./target/x86_64-unknown-linux-gnu/release/bera-reth:bera-reth

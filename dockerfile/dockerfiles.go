@@ -32,6 +32,18 @@ var GethLocal []byte
 //go:embed geth/localcross.Dockerfile
 var GethLocalCross []byte
 
+//go:embed reth/Dockerfile
+var Reth []byte
+
+//go:embed reth/native.Dockerfile
+var RethNative []byte
+
+//go:embed reth/local.Dockerfile
+var RethLocal []byte
+
+//go:embed reth/localcross.Dockerfile
+var RethLocalCross []byte
+
 //go:embed imported/Dockerfile
 var Imported []byte
 
