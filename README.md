@@ -117,6 +117,51 @@ heighliner will fetch the last 3 osmosis release tags from github, build docker 
 - `ghcr.io/p2p-org/cosmos-heighliner/osmosis:v6.0.0`
 - `ghcr.io/p2p-org/cosmos-heighliner/osmosis:v5.0.0`
 
+#### Example: build and push 0G images ( using pre-compiled binaries for Galileo & Aristotle )
+
+````bash
+# Local build
+go build -o heighliner
+# 0G Galileo Testnet - both binaries from same release
+./heighliner build -c 0g-galileo --git-ref v3.0.4 --go-version 1.23
+./heighliner build -c 0g-galileo-geth --git-ref v3.0.4 --go-version 1.23
+
+# 0G Aristotle Mainnet - both binaries from same release
+./heighliner build -c 0g-aristotle --git-ref v1.0.4 --go-version 1.23
+./heighliner build -c 0g-aristotle-geth --git-ref v1.0.4 --go-version 1.23
+````
+
+````bash
+#remote build
+# Galileo "testnet" - both binaries extracted from galileo-v3.0.4.tar.gz
+git tag 0g-galileo-v3.0.4
+git tag 0g-galileo-geth-v3.0.4
+# Aristotle "mainnet" - both binaries extracted from aristotle-v1.0.4.tar.gz
+git tag 0g-aristotle-v1.0.4
+git tag 0g-aristotle-geth-v1.0.4
+git push origin <tag-name>
+````
+
+#### Example: build and push Story images ( building from source )
+
+````bash
+# Local build
+go build -o heighliner
+# Story Consensus
+./heighliner build -c story --git-ref v0.11.0
+# Story-Geth Execution Layer
+./heighliner build -c story-geth --git-ref v0.2.0
+````
+
+````bash
+# Remote build
+# Story consensus
+git tag story-v0.11.0
+# Story-Geth execution
+git tag story-geth-v0.2.0
+git push origin <tag-name>
+````
+
 #### Example: build and push last n releases of all chains
 
 This will make a request to each chain's Github repository to fetch all recent releases. Github rate-limits unauthenticated requests to 60 requests per hour. Authenticated requests have either 1000 (personal) or 15000 (enterprise) per hour. To add Github API authentication, set the `GH_USER` and `GH_PAT` environment variables with your Github username and Github Personal Access Token (PAT), respectively.

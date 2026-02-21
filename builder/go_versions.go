@@ -14,7 +14,7 @@ const (
 	Go120Version = "1.20.14"
 	Go121Version = "1.21.13"
 	Go122Version = "1.22.7"
-	Go123Version = "1.23.4"
+	Go123Version = "1.23.12"
 	Go124Version = "1.24.1"
 	Go125Version = "1.25.7"
 	// ADD NEW GO VERSION [1] - latest patch release for each major/minor

@@ -1,0 +1,29 @@
+# 0G Galileo Testnet
+# Consensus layer (Cosmos SDK based)
+- name: 0g-galileo
+  github-organization: 0gfoundation
+  github-repo: 0gchain-NG
+  dockerfile: cosmos
+  build-target: |
+    apk add --no-cache wget tar
+    wget -O /tmp/release.tar.gz https://github.com/0gfoundation/0gchain-NG/releases/download/${VERSION}/galileo-${VERSION}.tar.gz
+    tar -xzf /tmp/release.tar.gz -C /tmp
+    cp /tmp/galileo-${VERSION}/validator/bin/0gchaind /go/bin/0gchaind
+    chmod +x /go/bin/0gchaind
+  binaries:
+    - /go/bin/0gchaind
+
+# Execution layer (Geth based)
+- name: 0g-galileo-geth
+  github-organization: 0gfoundation
+  github-repo: 0gchain-NG
+  dockerfile: geth
+  build-target: |
+    apk add --no-cache wget tar
+    wget -O /tmp/release.tar.gz https://github.com/0gfoundation/0gchain-NG/releases/download/${VERSION}/galileo-${VERSION}.tar.gz
+    tar -xzf /tmp/release.tar.gz -C /tmp
+    mkdir -p build/bin
+    cp /tmp/galileo-${VERSION}/validator/bin/geth build/bin/geth
+    chmod +x build/bin/geth
+  binaries:
+    - build/bin/geth
