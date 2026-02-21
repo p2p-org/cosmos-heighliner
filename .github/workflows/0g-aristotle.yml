@@ -49,7 +49,7 @@ jobs:
 
       - name: Build and push 0g-aristotle Docker image
         run: |
-          ./heighliner build -c 0g-aristotle --git-ref ${{ env.VERSION }}
+          ./heighliner build -c 0g-aristotle --git-ref ${{ env.VERSION }} --go-version 1.23
 
       - name: Tag and push Docker image
         run: |

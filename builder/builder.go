@@ -438,11 +438,14 @@ func (h *HeighlinerBuilder) buildChainNodeDockerImage(
 	}
 
 	if dockerfile == DockerfileTypeCosmos || dockerfile == DockerfileTypeAvalanche {
-		if err != nil {
+		// Only fail on go.mod error if no explicit go-version is provided
+		if err != nil && buildCfg.GoVersion == "" {
 			return fmt.Errorf("error getting mod file: %w", err)
 		}
 
-		wasmvmVersion = getWasmvmVersion(modFile)
+		if modFile != nil {
+			wasmvmVersion = getWasmvmVersion(modFile)
+		}
 
 		if h.race {
 			race = "true"
@@ -452,9 +455,14 @@ func (h *HeighlinerBuilder) buildChainNodeDockerImage(
 			}
 		}
 
-		fmt.Printf("Go version from go.mod: %s, will build with version: %s image: %s\n", modFile.Go.Version, gv.Version, gv.Image)
+		if modFile != nil {
+			fmt.Printf("Go version from go.mod: %s, will build with version: %s image: %s\n", modFile.Go.Version, gv.Version, gv.Image)
+		} else {
+			fmt.Printf("Using explicit Go version: %s image: %s\n", gv.Version, gv.Image)
+		}
 	} else if dockerfile == DockerfileTypeGoBuild {
-		if err != nil {
+		// Only fail on go.mod error if no explicit go-version is provided
+		if err != nil && buildCfg.GoVersion == "" {
 			return fmt.Errorf("error getting mod file: %w", err)
 		}
 
@@ -466,7 +474,11 @@ func (h *HeighlinerBuilder) buildChainNodeDockerImage(
 			}
 		}
 
-		fmt.Printf("Go version from go.mod: %s, will build with version: %s image: %s\n", modFile.Go.Version, gv.Version, gv.Image)
+		if modFile != nil {
+			fmt.Printf("Go version from go.mod: %s, will build with version: %s image: %s\n", modFile.Go.Version, gv.Version, gv.Image)
+		} else {
+			fmt.Printf("Using explicit Go version: %s image: %s\n", gv.Version, gv.Image)
+		}
 	}
 
 	fmt.Printf("Building image from %s, resulting docker image tags: +%v\n", buildFrom, imageTags)

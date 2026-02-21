@@ -6,9 +6,9 @@
   dockerfile: cosmos
   build-target: |
     apk add --no-cache wget tar
-    wget -O /tmp/release.tar.gz https://github.com/0gfoundation/0gchain-NG/releases/download/v${VERSION}/galileo-v${VERSION}.tar.gz
+    wget -O /tmp/release.tar.gz https://github.com/0gfoundation/0gchain-NG/releases/download/${VERSION}/galileo-${VERSION}.tar.gz
     tar -xzf /tmp/release.tar.gz -C /tmp
-    cp /tmp/galileo-v${VERSION}/validator/bin/0gchaind /go/bin/0gchaind
+    cp /tmp/galileo-${VERSION}/validator/bin/0gchaind /go/bin/0gchaind
     chmod +x /go/bin/0gchaind
   binaries:
     - /go/bin/0gchaind
@@ -20,10 +20,10 @@
   dockerfile: geth
   build-target: |
     apk add --no-cache wget tar
-    wget -O /tmp/release.tar.gz https://github.com/0gfoundation/0gchain-NG/releases/download/v${VERSION}/galileo-v${VERSION}.tar.gz
+    wget -O /tmp/release.tar.gz https://github.com/0gfoundation/0gchain-NG/releases/download/${VERSION}/galileo-${VERSION}.tar.gz
     tar -xzf /tmp/release.tar.gz -C /tmp
     mkdir -p build/bin
-    cp /tmp/galileo-v${VERSION}/validator/bin/geth build/bin/geth
+    cp /tmp/galileo-${VERSION}/validator/bin/geth build/bin/geth
     chmod +x build/bin/geth
   binaries:
     - build/bin/geth
