@@ -1,4 +1,60 @@
 # This is a stub file. Please add new chains to the chains/ directory
+# 0G Galileo Testnet
+- name: 0g-galileo
+  github-organization: 0gfoundation
+  github-repo: 0gchain-NG
+  dockerfile: cosmos
+  build-target: |
+    apk add --no-cache wget tar
+    wget -O /tmp/release.tar.gz https://github.com/0gfoundation/0gchain-NG/releases/download/v${VERSION}/galileo-v${VERSION}.tar.gz
+    tar -xzf /tmp/release.tar.gz -C /tmp
+    cp /tmp/galileo-v${VERSION}/validator/bin/0gchaind /go/bin/0gchaind
+    chmod +x /go/bin/0gchaind
+  binaries:
+    - /go/bin/0gchaind
+
+- name: 0g-galileo-geth
+  github-organization: 0gfoundation
+  github-repo: 0gchain-NG
+  dockerfile: geth
+  build-target: |
+    apk add --no-cache wget tar
+    wget -O /tmp/release.tar.gz https://github.com/0gfoundation/0gchain-NG/releases/download/v${VERSION}/galileo-v${VERSION}.tar.gz
+    tar -xzf /tmp/release.tar.gz -C /tmp
+    mkdir -p build/bin
+    cp /tmp/galileo-v${VERSION}/validator/bin/geth build/bin/geth
+    chmod +x build/bin/geth
+  binaries:
+    - build/bin/geth
+
+# 0G Aristotle Mainnet
+- name: 0g-aristotle
+  github-organization: 0gfoundation
+  github-repo: 0gchain-Aristotle
+  dockerfile: cosmos
+  build-target: |
+    apk add --no-cache wget tar
+    wget -O /tmp/release.tar.gz https://github.com/0gfoundation/0gchain-Aristotle/releases/download/${VERSION}/aristotle-v${VERSION}.tar.gz
+    tar -xzf /tmp/release.tar.gz -C /tmp
+    cp /tmp/aristotle-v${VERSION}/bin/0gchaind /go/bin/0gchaind
+    chmod +x /go/bin/0gchaind
+  binaries:
+    - /go/bin/0gchaind
+
+- name: 0g-aristotle-geth
+  github-organization: 0gfoundation
+  github-repo: 0gchain-Aristotle
+  dockerfile: geth
+  build-target: |
+    apk add --no-cache wget tar
+    wget -O /tmp/release.tar.gz https://github.com/0gfoundation/0gchain-Aristotle/releases/download/${VERSION}/aristotle-v${VERSION}.tar.gz
+    tar -xzf /tmp/release.tar.gz -C /tmp
+    mkdir -p build/bin
+    cp /tmp/aristotle-v${VERSION}/bin/geth build/bin/geth
+    chmod +x build/bin/geth
+  binaries:
+    - build/bin/geth
+
 # Acrechain
 - name: acrechain
   github-organization: ArableProtocol
