@@ -2,16 +2,10 @@
 - name: saga
   github-organization: sagaxyz
   github-repo: ssc
-  dockerfile: none
-  pre-build: |
-    set -eux
-    WASMVM_VERSION="v1.4.1"
-    wget https://saga-public-assets.s3.us-east-1.amazonaws.com/binaries/amd64/sscd -O /go/bin/sscd
-    chmod +x /go/bin/sscd
-    wget https://github.com/CosmWasm/wasmvm/releases/download/${WASMVM_VERSION}/libwasmvm.x86_64.so
+  dockerfile: cosmos
+  build-target: |
+    make install
   binaries:
     - /go/bin/sscd
-  libraries:
-    - libwasmvm.x86_64.so
-  platforms:
-    - linux/amd64
+  build-env:
+    - BUILD_TAGS=muslc
