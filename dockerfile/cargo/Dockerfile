@@ -1,4 +1,4 @@
-FROM --platform=$BUILDPLATFORM rust:1-bullseye AS build-env
+FROM --platform=$BUILDPLATFORM rust:1-bookworm AS build-env
 
 RUN rustup component add rustfmt
 
@@ -19,7 +19,7 @@ RUN if [ "${TARGETARCH}" = "arm64" ]; then\
   else\
   apt update;\
   fi;\
-  apt install -y libssl1.1:arm64 libssl-dev:arm64 openssl:arm64 libclang-dev clang cmake libstdc++6:arm64;\
+  apt install -y libssl3:arm64 libssl-dev:arm64 openssl:arm64 libclang-dev clang cmake libstdc++6:arm64;\
   elif [ "${TARGETARCH}" = "amd64" ]; then\
   rustup target add x86_64-unknown-linux-gnu;\
   wget https://github.com/protocolbuffers/protobuf/releases/download/v21.8/protoc-21.8-linux-x86_64.zip;\
@@ -33,7 +33,7 @@ RUN if [ "${TARGETARCH}" = "arm64" ]; then\
   else\
   apt update;\
   fi;\
-  apt install -y libssl1.1:amd64 libssl-dev:amd64 openssl:amd64 libclang-dev clang cmake libstdc++6:amd64;\
+  apt install -y libssl3:amd64 libssl-dev:amd64 openssl:amd64 libclang-dev clang cmake libstdc++6:amd64;\
   fi
 
 ARG GITHUB_ORGANIZATION
@@ -156,8 +156,8 @@ FROM busybox:1.34.1-musl AS busybox-full
 FROM alpine:3 as alpine-3
 
 # Use TARGETARCH image for determining necessary libs
-FROM rust:1-bullseye as target-arch-libs
-RUN apt update && apt install -y libssl1.1 openssl clang libstdc++6
+FROM rust:1-bookworm as target-arch-libs
+RUN apt update && apt install -y libssl3 openssl clang libstdc++6
 
 ARG TARGETARCH
 ENV TARGETARCH=$TARGETARCH

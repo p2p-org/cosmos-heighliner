@@ -1,8 +1,8 @@
-FROM rust:1-bullseye AS build-env
+FROM rust:1-bookworm AS build-env
 
 RUN rustup component add rustfmt
 
-RUN apt update && apt install -y libssl1.1 libssl-dev openssl libclang-dev clang cmake libstdc++6
+RUN apt update && apt install -y libssl3 libssl-dev openssl libclang-dev clang cmake libstdc++6
 RUN if [ "$(uname -m)" = "aarch64" ]; then\
   wget https://github.com/protocolbuffers/protobuf/releases/download/v21.8/protoc-21.8-linux-aarch_64.zip;\
   unzip protoc-21.8-linux-aarch_64.zip -d /usr;\
