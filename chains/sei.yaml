@@ -5,10 +5,9 @@
   dockerfile: cargo
   build-target: |
     # Keep parity with sei-builds-seid expectations by building full artifacts.
-    make build install install-price-feeder
+    make build install
   binaries:
     - /root/go/bin/seid
-    - /root/go/bin/price-feeder
   libraries:
     # Keep parity with sei-builds-seid Makefile extraction logic.
     - /build/sei-chain/sei-wasmvm/internal/api/libwasmvm*.so
