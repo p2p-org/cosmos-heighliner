@@ -1,0 +1,122 @@
+name: Build and Push Berachain Docker Images
+
+on:
+  push:
+    tags:
+      - "berachain-v*"      # Unified stack tag
+      - "beacond-v*"        # Granular tags
+      - "beacond-ref-*"
+      - "bera-reth-v*"
+      - "bera-reth-ref-*"
+  workflow_dispatch:
+    inputs:
+      beacond_ref:
+        description: "beacond ref to build (tag, branch, or commit)"
+        required: false
+        default: "main"
+      bera_reth_ref:
+        description: "bera-reth ref to build (tag, branch, or commit)"
+        required: false
+        default: "main"
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+  INFRA_TOOLKIT: v0.1.6
+
+jobs:
+  build-consensus:
+    name: Build beacond (Consensus)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Set up Go
+        uses: actions/setup-go@v3
+        with:
+          go-version: '1.25.1'
+
+      - name: Log in to the Container registry
+        uses: docker/login-action@v1
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build Heighliner binary
+        run: go build -o heighliner
+
+      - name: Resolve Ref
+        id: resolve_ref
+        run: |
+          set -euo pipefail
+          REF="${{ github.event.inputs.beacond_ref }}"
+          if [[ -z "$REF" ]]; then
+            if [[ "${GITHUB_REF}" == refs/tags/berachain-* ]]; then
+              REF="${GITHUB_REF#refs/tags/berachain-}"
+            elif [[ "${GITHUB_REF}" == refs/tags/beacond-* ]]; then
+              REF="${GITHUB_REF#refs/tags/beacond-}"
+            else
+              REF="main"
+            fi
+          fi
+          echo "git_ref=$REF" >> "$GITHUB_OUTPUT"
+          echo "Resolved beacond ref: $REF"
+
+      - name: Build and Push
+        run: |
+          ./heighliner build -c beacond --git-ref ${{ steps.resolve_ref.outputs.git_ref }}
+          docker tag beacond:${{ steps.resolve_ref.outputs.git_ref }} ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:beacond-${{ steps.resolve_ref.outputs.git_ref }}
+          docker push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:beacond-${{ steps.resolve_ref.outputs.git_ref }}
+
+  build-execution:
+    name: Build bera-reth (Execution)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Set up Go
+        uses: actions/setup-go@v3
+        with:
+          go-version: '1.25.1'
+
+      - name: Log in to the Container registry
+        uses: docker/login-action@v1
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build Heighliner binary
+        run: go build -o heighliner
+
+      - name: Resolve Ref
+        id: resolve_ref
+        run: |
+          set -euo pipefail
+          REF="${{ github.event.inputs.bera_reth_ref }}"
+          if [[ -z "$REF" ]]; then
+            if [[ "${GITHUB_REF}" == refs/tags/berachain-* ]]; then
+              REF="${GITHUB_REF#refs/tags/berachain-}"
+            elif [[ "${GITHUB_REF}" == refs/tags/bera-reth-* ]]; then
+              REF="${GITHUB_REF#refs/tags/bera-reth-}"
+            else
+              REF="main"
+            fi
+          fi
+          echo "git_ref=$REF" >> "$GITHUB_OUTPUT"
+          echo "Resolved bera-reth ref: $REF"
+
+      - name: Build and Push
+        run: |
+          ./heighliner build -c bera-reth --git-ref ${{ steps.resolve_ref.outputs.git_ref }}
+          docker tag bera-reth:${{ steps.resolve_ref.outputs.git_ref }} ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:bera-reth-${{ steps.resolve_ref.outputs.git_ref }}
+          docker push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:bera-reth-${{ steps.resolve_ref.outputs.git_ref }}
