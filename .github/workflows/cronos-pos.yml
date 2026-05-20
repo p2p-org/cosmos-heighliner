@@ -48,7 +48,7 @@ jobs:
           docker pull ghcr.io/p2p-org/cosmos-heighliner:infra-toolkit-${{ env.INFRA_TOOLKIT }}
       - name: Build and push cronos pos Docker image
         run: |
-          ./heighliner build -c cronos-pos --git-ref ${{ env.VERSION }} --alpine-version 3.20
+          ./heighliner build -c cronos-pos --git-ref ${{ env.VERSION }} 
 
       - name: Tag and push Docker image
         run: |
