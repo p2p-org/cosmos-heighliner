@@ -3,16 +3,16 @@
   github-repo: celestia-app
   dockerfile: cosmos
   # Pre-built release binary is linked against glibc 2.38+ (__isoc23_*); use glibc final stage instead of Alpine.
-  final-base: glibc
-  pre-build: |
-    wget https://github.com/celestiaorg/celestia-app/releases/download/${VERSION}/celestia-app_Linux_x86_64.tar.gz
-    tar -xzf celestia-app_Linux_x86_64.tar.gz
-    mv celestia-appd /go/bin/celestia-appd
-    chmod +x /go/bin/celestia-appd
-  #build-target: |
-  #  VERSION := $(shell echo $(shell git describe --tags 2>/dev/null || git log -1 --format='%h') | sed 's/^v//')
-  #  COMMIT=$(git log -1 --format='%H')
-  #  LDFLAGS="$LDFLAGS -X github.com/cosmos/cosmos-sdk/version.Name=celestia-app -X github.com/cosmos/cosmos-sdk/version.AppName=celestia-appd -X github.com/cosmos/cosmos-sdk/version.Version=$VERSION -X github.com/cosmos/cosmos-sdk/version.Commit=$COMMIT"
-  #  go install -ldflags="$LDFLAGS" ./cmd/celestia-appd
+  # final-base: glibc
+  #pre-build: |
+  #  wget https://github.com/celestiaorg/celestia-app/releases/download/${VERSION}/celestia-app_Linux_x86_64.tar.gz
+  #  tar -xzf celestia-app_Linux_x86_64.tar.gz
+  #  mv celestia-appd /go/bin/celestia-appd
+  #  chmod +x /go/bin/celestia-appd
+  build-target: |
+    VERSION := $(shell echo $(shell git describe --tags 2>/dev/null || git log -1 --format='%h') | sed 's/^v//')
+    COMMIT=$(git log -1 --format='%H')
+    LDFLAGS="$LDFLAGS -X github.com/cosmos/cosmos-sdk/version.Name=celestia-app -X github.com/cosmos/cosmos-sdk/version.AppName=celestia-appd -X github.com/cosmos/cosmos-sdk/version.Version=$VERSION -X github.com/cosmos/cosmos-sdk/version.Commit=$COMMIT"
+    go install -ldflags="$LDFLAGS" ./cmd/celestia-appd
   binaries:
     - /go/bin/celestia-appd
