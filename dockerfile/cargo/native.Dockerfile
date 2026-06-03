@@ -1,4 +1,4 @@
-FROM rust:1-bookworm AS build-env
+FROM rust:1-trixie AS build-env
 
 RUN rustup component add rustfmt
 
