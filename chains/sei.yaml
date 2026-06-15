@@ -12,5 +12,10 @@
     # Keep parity with sei-builds-seid Makefile extraction logic.
     - /build/sei-chain/sei-wasmvm/internal/api/libwasmvm*.so
     - /build/sei-chain/sei-wasmd/x/wasm/artifacts/v*/api/libwasmvm*.so
+  directories:
+    # Giga executor (v6.5.2+) loads libevmone via runtime.Caller(0) at the
+    # build-time source path. Preserve the absolute build path in the final
+    # image so evmc.Load() can find /build/sei-chain/giga/executor/lib/libevmone*.so.
+    - /build/sei-chain/giga/executor/lib
   platforms:
     - linux/amd64
