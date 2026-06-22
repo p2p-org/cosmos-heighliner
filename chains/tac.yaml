@@ -1,0 +1,10 @@
+# Tac Chain
+- name: tac
+  github-organization: TacBuild
+  github-repo: tacchain
+  dockerfile: cargo
+  build-target: make install
+  build-env:
+    - LEDGER_ENABLED=false
+  binaries:
+    - /root/go/bin/tacchaind
