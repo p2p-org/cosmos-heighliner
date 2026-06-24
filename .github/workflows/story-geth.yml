@@ -5,6 +5,11 @@ on:
     tags:
       - "story-geth-v[0-9]+.[0-9]+.[0-9]+*"
   workflow_dispatch:
+    inputs:
+      version:
+        description: 'Git tag/ref to build (e.g. v1.2.1)'
+        required: false
+        default: ''
 
 env:
   REGISTRY: ghcr.io
@@ -38,9 +43,14 @@ jobs:
         run: |
           go build -o heighliner
 
-      - name: Extract version from tag
+      - name: Extract version from tag or input
         id: extract_version
-        run: echo "VERSION=${GITHUB_REF#refs/tags/story-geth-}" >> $GITHUB_ENV
+        run: |
+          if [ -n "${{ github.event.inputs.version }}" ]; then
+            echo "VERSION=${{ github.event.inputs.version }}" >> $GITHUB_ENV
+          else
+            echo "VERSION=${GITHUB_REF#refs/tags/story-geth-}" >> $GITHUB_ENV
+          fi
 
       - name: Manually pull the base Docker image
         run: |
@@ -49,7 +59,7 @@ jobs:
 
       - name: Build and push story-geth Docker image
         run: |
-          ./heighliner build -c story-geth --git-ref ${{ env.VERSION }}
+          ./heighliner build -c story-geth --git-ref ${{ env.VERSION }} --go-version 1.24
 
       - name: Tag and push Docker image
         run: |
