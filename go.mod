@@ -3,7 +3,7 @@ module github.com/p2p-org/heighliner
 go 1.23
 
 require (
-	github.com/docker/cli v27.3.1+incompatible
+	github.com/docker/cli v29.2.0+incompatible
 	github.com/docker/docker v27.3.1+incompatible
 	github.com/go-git/go-billy/v5 v5.5.0
 	github.com/go-git/go-git/v5 v5.11.0
