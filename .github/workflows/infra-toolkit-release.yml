@@ -7,15 +7,14 @@ on:
   workflow_dispatch:
 
 env:
-  REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}
-
+  REGISTRY: kcr.infra.p2p.org
+  IMAGE_NAME: cosmos/cosmos-heighliner
 jobs:
   build-and-push-image:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      packages: write
+      packages: read
 
     steps:
       - name: Checkout repository
@@ -31,8 +30,8 @@ jobs:
         uses: docker/login-action@dd4fa0671be5250ee6f50aedf4cb05514abda2c7
         with:
           registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          username: robot@cosmos+cosmos-github-bot
+          password: ${{ secrets.KCR_TOKEN }}
 
       - name: Extract metadata (tags, labels) for Docker
         id: meta
