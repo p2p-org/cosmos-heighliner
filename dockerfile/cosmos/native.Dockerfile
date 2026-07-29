@@ -120,7 +120,7 @@ RUN bash -c 'set -eux;\
 FROM ghcr.io/p2p-org/cosmos-heighliner:infra-toolkit-v0.1.6 AS infra-toolkit
 
 # Use ln and rm from full featured busybox for assembling final image
-FROM busybox:1.34.1-musl AS busybox-full
+FROM busybox:1.38.0-musl AS busybox-full
 
 # Optional target for pre-built glibc binaries (e.g. Celestia release binaries that need __isoc23_* from glibc 2.38+).
 # Use: docker build --target glibc ... or heighliner with final-base: glibc in chain config.
