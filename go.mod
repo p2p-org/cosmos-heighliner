@@ -11,14 +11,10 @@ require (
 	github.com/moby/buildkit v0.12.5
 	github.com/sirupsen/logrus v1.9.4
 	github.com/spf13/cobra v1.3.0
-	github.com/stretchr/testify v1.10.0
-	golang.org/x/crypto v0.31.0
-	golang.org/x/mod v0.21.0
-	golang.org/x/sync v0.10.0
 	github.com/stretchr/testify v1.11.1
 	golang.org/x/crypto v0.50.0
 	golang.org/x/mod v0.34.0
-	golang.org/x/sync v0.20.0
+	golang.org/x/sync v0.22.0
 	gopkg.in/yaml.v2 v2.4.0
 )
 
