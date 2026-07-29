@@ -7,8 +7,8 @@ on:
   workflow_dispatch:
 
 env:
-  REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}
+  REGISTRY: ${{ vars.KCR_REGISTRY }}
+  IMAGE_NAME: cosmos/cosmos-heighliner
   INFRA_TOOLKIT: v0.1.6
   GIT_LFS_SKIP_SMUDGE: 1
   RUST_BACKTRACE: full
@@ -18,7 +18,7 @@ jobs:
     runs-on: ubuntu-22.04
     permissions:
       contents: read
-      packages: write
+      packages: read
 
     steps:
       - name: Checkout repository
@@ -27,14 +27,14 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@be3c94b385c4f180051c996d336f57a34c397495
         with:
-          go-version: '1.21'
+          go-version: '1.26'
 
       - name: Log in to the Container registry
         uses: docker/login-action@dd4fa0671be5250ee6f50aedf4cb05514abda2c7
         with:
           registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          username: ${{ vars.KCR_USERNAME }}
+          password: ${{ secrets.KCR_TOKEN }}
 
       - name: Build Heighliner binary
         run: |

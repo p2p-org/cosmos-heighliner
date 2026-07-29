@@ -133,7 +133,7 @@ FROM ghcr.io/p2p-org/cosmos-heighliner:infra-toolkit-v0.1.6 AS infra-toolkit
 RUN addgroup --gid 1111 -S p2p && adduser --uid 1111 -S p2p -G p2p
 
 # Use ln and rm from full featured busybox for assembling final image
-FROM busybox:1.34.1-musl AS busybox-full
+FROM busybox:1.38.0-musl AS busybox-full
 
 # Build final image from scratch
 FROM alpine:3
