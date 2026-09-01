@@ -8,8 +8,8 @@
     - LEDGER_ENABLED=false
   pre-build: |
    wget https://github.com/TacBuild/tacchain/releases/download/${VERSION}/tacchaind-linux-amd64
-   mkdir -p /go/bin
-   mv tacchaind-linux-amd64 /go/bin/tacchaind 
-   chmod +x /go/bin/tacchaind
+   mkdir -p /root/go/bin
+   mv tacchaind-linux-amd64 /root/go/bin/tacchaind 
+   chmod +x /root/go/bin/tacchaind
   binaries:
     - /root/go/bin/tacchaind
