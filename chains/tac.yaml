@@ -3,8 +3,12 @@
   github-organization: TacBuild
   github-repo: tacchain
   dockerfile: cargo
-  build-target: make install
+  #build-target: make install
   build-env:
     - LEDGER_ENABLED=false
+  pre-build: |
+   wget https://github.com/TacBuild/tacchain/releases/download/${VERSION}/tacchaind-linux-amd64
+   mv tacchaind-linux-amd64 /go/bin/tacchaind 
+   chmod +x /go/bin/tacchaind
   binaries:
     - /root/go/bin/tacchaind
