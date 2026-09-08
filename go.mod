@@ -1,6 +1,6 @@
 module github.com/p2p-org/heighliner
 
-go 1.23
+go 1.26.0
 
 require (
 	github.com/docker/cli v27.3.1+incompatible
@@ -14,7 +14,7 @@ require (
 	github.com/stretchr/testify v1.8.4
 	golang.org/x/crypto v0.31.0
 	golang.org/x/mod v0.21.0
-	golang.org/x/sync v0.10.0
+	golang.org/x/sync v0.23.0
 	gopkg.in/yaml.v2 v2.4.0
 )
 
