@@ -5,6 +5,11 @@ on:
     tags:
       - "story-v[0-9]+.[0-9]+.[0-9]+*"
   workflow_dispatch:
+    inputs:
+      version:
+        description: 'Git tag/ref to build (e.g. v1.7.0)'
+        required: false
+        default: ''
 
 env:
   REGISTRY: ${{ vars.KCR_REGISTRY }}
@@ -38,9 +43,16 @@ jobs:
         run: |
           go build -o heighliner
 
-      - name: Extract version from tag
+      - name: Extract version from tag or input
         id: extract_version
-        run: echo "VERSION=${GITHUB_REF#refs/tags/story-}" >> $GITHUB_ENV
+        env:
+          INPUT_VERSION: ${{ github.event.inputs.version }}
+        run: |
+          if [ -n "$INPUT_VERSION" ]; then
+            echo "VERSION=$INPUT_VERSION" >> $GITHUB_ENV
+          else
+            echo "VERSION=${GITHUB_REF#refs/tags/story-}" >> $GITHUB_ENV
+          fi
 
       - name: Manually pull the base Docker image
         run: |
