@@ -2,7 +2,7 @@
 - name: injective
   pre-build: |
     apt update
-    apt install unzip
+    apt install -y unzip=6.0-26+deb11u1
     wget https://github.com/InjectiveFoundation/injective-core/releases/download/$VERSION/linux-amd64.zip
     unzip linux-amd64.zip
     mv injectived peggo /usr/bin
